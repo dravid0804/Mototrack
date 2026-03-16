@@ -1,0 +1,79 @@
+# docker-compose.yml — RevTrack full stack
+version: '3.9'
+
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: revtrack_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       revtrack
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: revtrack_secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend API ─────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      target: runner
+    container_name: revtrack_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV:              production
+      PORT:                  5000
+      DB_HOST:               postgres
+      DB_PORT:               5432
+      DB_NAME:               revtrack
+      DB_USER:               postgres
+      DB_PASSWORD:           revtrack_secret
+      JWT_SECRET:            change_this_in_production_please
+      JWT_EXPIRES_IN:        7d
+      FRONTEND_URL:          http://localhost:3000
+      START_SCHEDULER:       "true"
+      # Fill in your real credentials:
+      TWILIO_ACCOUNT_SID:    ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN:     ${TWILIO_AUTH_TOKEN}
+      TWILIO_WHATSAPP_FROM:  ${TWILIO_WHATSAPP_FROM}
+      SMTP_HOST:             ${SMTP_HOST}
+      SMTP_PORT:             ${SMTP_PORT}
+      SMTP_USER:             ${SMTP_USER}
+      SMTP_PASS:             ${SMTP_PASS}
+      EMAIL_FROM:            ${EMAIL_FROM}
+      EMAIL_FROM_NAME:       RevTrack Alerts
+      WARN_DAYS_BEFORE:      7
+      URGENT_DAYS_BEFORE:    3
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/logs:/app/logs
+
+  # ── pgAdmin (optional dev UI) ───────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: revtrack_pgadmin
+    restart: unless-stopped
+    profiles: ["dev"]
+    environment:
+      PGADMIN_DEFAULT_EMAIL:    admin@revtrack.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:

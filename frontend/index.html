@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RevTrack — Vehicle Service Manager</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div class="auth-page active" id="P_login">
+  <div class="auth-left">
+    <div class="auth-left-bg"></div>
+    <div class="orb orb1"></div><div class="orb orb2"></div>
+    <div class="grid-lines"></div>
+    <div class="auth-left-content">
+      <div class="logo-mark"><div class="logo-icon">⚙</div>RevTrack</div>
+      <div class="auth-headline">Never miss a<br><em>service interval</em><br>again.</div>
+      <div class="auth-sub">Smart maintenance tracking for your cars &amp; bikes — with instant email alerts so you're always road-ready.</div>
+      <div class="auth-badges">
+        <div class="auth-badge"><div class="dot" style="background:var(--green)"></div>Engine Oil</div>
+        <div class="auth-badge"><div class="dot" style="background:var(--blue)"></div>Brake Fluid</div>
+        <div class="auth-badge"><div class="dot" style="background:var(--amber)"></div>Air Filter</div>
+        
+        <div class="auth-badge"><div class="dot" style="background:var(--accent)"></div>50+ Service Types</div>
+      </div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="auth-form fu" id="loginForm">
+      <h2>Welcome back</h2>
+      <p class="sub">Sign in to your RevTrack dashboard</p>
+      <div class="field"><label>Email</label><input type="email" id="li_email" value="demo@revtrack.com" placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="li_pass" value="password" placeholder="••••••••"></div>
+      <div class="form-error hidden" id="loginError"></div>
+      <button class="btn-cta" id="loginBtn" onclick="login()">Sign in →</button>
+      <div class="auth-switch">No account? <a onclick="goPage('P_register')">Create one free</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ REGISTER ═══ -->
+<div class="auth-page" id="P_register">
+  <div class="auth-left">
+    <div class="auth-left-bg"></div>
+    <div class="orb orb1"></div><div class="orb orb2"></div>
+    <div class="grid-lines"></div>
+    <div class="auth-left-content">
+      <div class="logo-mark"><div class="logo-icon">⚙</div>RevTrack</div>
+      <div class="auth-headline">Set up takes<br><em>2 minutes.</em><br>Savings last years.</div>
+      <div class="auth-sub">Register your vehicles once. RevTrack auto-calculates every service deadline and alerts you via email.</div>
+      <div class="auth-badges">
+        
+        <div class="auth-badge"><div class="dot" style="background:var(--blue)"></div>Email alerts</div>
+        <div class="auth-badge"><div class="dot" style="background:var(--green)"></div>Free forever</div>
+      </div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="auth-form fu">
+      <h2>Create account</h2>
+      <p class="sub">Free forever. No credit card needed.</p>
+      <div class="form-row">
+        <div class="field"><label>First name</label><input type="text" id="r_first" placeholder="Arjun"></div>
+        <div class="field"><label>Last name</label><input type="text" id="r_last" placeholder="Kumar"></div>
+      </div>
+      <div class="field"><label>Email</label><input type="email" id="r_email" placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="r_pass" placeholder="Min. 8 characters"></div>
+
+      <div class="form-error hidden" id="registerError"></div>
+      <button class="btn-cta" onclick="register()">Create account →</button>
+      <div class="auth-switch">Already have an account? <a onclick="goPage('P_login')">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP SHELL ═══ -->
+<div class="app-shell" id="P_app">
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="logo-sq">⚙</div>
+      <div><div class="brand">RevTrack</div><div class="tagline">Service Manager</div></div>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-sep">Overview</div>
+      <div class="nav-item active" data-view="dashboard" onclick="nav(this)"><span class="ni">◈</span>Dashboard</div>
+      <div class="nav-item" data-view="notifications" onclick="nav(this)"><span class="ni">🔔</span>Notifications<span class="nav-badge" id="NB">0</span></div>
+      <div class="nav-sep">Vehicles</div>
+      <div class="nav-item" data-view="vehicles" onclick="nav(this)"><span class="ni">🚗</span>My Vehicles</div>
+      <div class="nav-item" data-view="addVehicle" onclick="nav(this)"><span class="ni">＋</span>Add Vehicle</div>
+      <div class="nav-sep">Maintenance</div>
+      <div class="nav-item" data-view="servicelog" onclick="nav(this)"><span class="ni">📋</span>Service Log</div>
+      <div class="nav-item" data-view="upcoming" onclick="nav(this)"><span class="ni">📅</span>Upcoming</div>
+      <div class="nav-sep">Settings</div>
+      <div class="nav-item" data-view="alerts" onclick="nav(this)"><span class="ni">📨</span>Alert Settings</div>
+      <div class="nav-item" data-view="profile" onclick="nav(this)"><span class="ni">👤</span>Profile</div>
+    </nav>
+    <div class="sb-user">
+      <div class="u-av" id="SB_AV">?</div>
+      <div><div class="u-name" id="SB_NAME">Loading...</div><div class="u-email" id="SB_EMAIL"></div></div>
+      <button class="u-logout" onclick="logout()" title="Logout">⏻</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-title" id="TB_TITLE">Dashboard</div>
+      <div class="search"><span>🔍</span><input id="searchInput" placeholder="Search vehicles, services..." oninput="handleSearch(this.value)"></div>
+      <div class="tb-btn" onclick="nav(document.querySelector('[data-view=notifications]'))">🔔<span class="nb" id="TOP_NB">0</span></div>
+      <div class="tb-btn" onclick="nav(document.querySelector('[data-view=profile]'))">👤</div>
+    </div>
+
+    <div class="content">
+
+      <!-- ─── DASHBOARD ─── -->
+      <div class="view active fu" id="V_dashboard">
+        <div id="alertStrip" class="alert-strip hidden">
+          <span class="as-icon">🚨</span>
+          <div class="as-text"><strong id="alertTitle"></strong><p id="alertMsg"></p></div>
+          <button class="as-dismiss" onclick="document.getElementById('alertStrip').classList.add('hidden')">✕</button>
+        </div>
+        <div class="stats-row" id="dashStats">
+          <div class="sc sc-loading"><div class="sc-accent" style="background:var(--accent)"></div><div class="sc-label">Total Vehicles</div><div class="sc-val">—</div></div>
+          <div class="sc sc-loading"><div class="sc-accent" style="background:var(--red)"></div><div class="sc-label">Overdue</div><div class="sc-val">—</div></div>
+          <div class="sc sc-loading"><div class="sc-accent" style="background:var(--amber)"></div><div class="sc-label">Due This Month</div><div class="sc-val">—</div></div>
+          <div class="sc sc-loading"><div class="sc-accent" style="background:var(--green)"></div><div class="sc-label">Services Done</div><div class="sc-val">—</div></div>
+        </div>
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-title">Upcoming Services <a onclick="nav(document.querySelector('[data-view=upcoming]'))">View all →</a></div>
+            <div class="up-list" id="dashUpcoming"><div class="loading-row">Loading...</div></div>
+          </div>
+          <div class="panel">
+            <div class="panel-title">Recent Alerts <a onclick="nav(document.querySelector('[data-view=notifications]'))">All →</a></div>
+            <div class="up-list" id="dashAlerts"><div class="loading-row">Loading...</div></div>
+          </div>
+        </div>
+        <div class="sec-title">Vehicle Health <a onclick="nav(document.querySelector('[data-view=vehicles]'))">All vehicles →</a></div>
+        <div class="vh-grid" id="dashVehicles"><div class="loading-row">Loading vehicles...</div></div>
+      </div>
+
+      <!-- ─── VEHICLES ─── -->
+      <div class="view fu" id="V_vehicles">
+        <div class="page-h"><div class="breadcrumb">Home › <span>My Vehicles</span></div><h1>My Vehicles</h1><p>Click any vehicle to view its full service breakdown</p></div>
+        <div class="vh-grid" id="vehiclesList"></div>
+      </div>
+
+      <!-- ─── VEHICLE DETAIL ─── -->
+      <div class="view fu" id="V_vehicleDetail">
+        <div id="VD_CONTENT"></div>
+      </div>
+
+      <!-- ─── SERVICE LOG ─── -->
+      <div class="view fu" id="V_servicelog">
+        <div class="page-h"><div class="breadcrumb">Home › <span>Service Log</span></div><h1>Service Log</h1><p>Complete maintenance history across all vehicles</p></div>
+        <div class="filter-bar">
+          <select id="filterVehicle" onchange="loadServiceLog()"><option value="">All Vehicles</option></select>
+          <select id="filterStatus" onchange="loadServiceLog()">
+            <option value="">All Status</option>
+            <option value="overdue">Overdue</option>
+            <option value="warning">Due Soon</option>
+            <option value="ok">Healthy</option>
+          </select>
+          <button class="btn-prim" style="margin-left:auto;font-size:0.82rem;padding:6px 14px;" onclick="openLogModal()">＋ Log Service</button>
+        </div>
+        <div class="svc-table">
+          <div class="st-head"><div>Service</div><div>Vehicle</div><div>Date</div><div>Odometer</div><div>Status</div><div>Next Due</div></div>
+          <div id="serviceLogBody"></div>
+        </div>
+      </div>
+
+      <!-- ─── UPCOMING ─── -->
+      <div class="view fu" id="V_upcoming">
+        <div class="page-h"><div class="breadcrumb">Home › <span>Upcoming Services</span></div><h1>Upcoming Services</h1><p>All scheduled maintenance sorted by urgency</p></div>
+        <div id="upcomingList"></div>
+      </div>
+
+      <!-- ─── NOTIFICATIONS ─── -->
+      <div class="view fu" id="V_notifications">
+        <div class="page-h"><div class="breadcrumb">Home › <span>Notifications</span></div><h1>Notifications</h1><p>All alerts delivered via Email</p></div>
+        <div class="notif-tabs">
+          <div class="nt active" onclick="filterNotifs('',this)">All</div>
+          <div class="nt" onclick="filterNotifs('overdue',this)">Overdue</div>
+          <div class="nt" onclick="filterNotifs('warning',this)">Upcoming</div>
+          <div class="nt" onclick="filterNotifs('completion',this)">Completed</div>
+        </div>
+        <div class="notif-list" id="notifList"></div>
+      </div>
+
+      <!-- ─── ALERT SETTINGS ─── -->
+      <div class="view fu" id="V_alerts">
+        <div class="page-h"><div class="breadcrumb">Home › <span>Alert Settings</span></div><h1>Alert Settings</h1><p>Configure how and when RevTrack notifies you</p></div>
+
+        <div class="notif-settings">
+          <div class="ns-title">✉ Email Alerts <span class="ns-badge">Active</span></div>
+          <div class="toggle-row"><div class="tr-info"><div class="tl">7-day advance warning</div><div class="ts">Email 7 days before any service is due — includes oil grade and quantity</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle on em" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-row"><div class="tr-info"><div class="tl">Urgent 3-day reminder</div><div class="ts">Second email 3 days before the service deadline</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle on em" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-row"><div class="tr-info"><div class="tl">Overdue critical alert</div><div class="ts">Immediate email when any service passes its due date</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle on em" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-row"><div class="tr-info"><div class="tl">Service completion receipt</div><div class="ts">Email confirmation every time you log a completed service</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle on em" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-row"><div class="tr-info"><div class="tl">Monthly health digest</div><div class="ts">Full vehicle health report on the 1st of every month</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+
+        <div class="notif-settings">
+          <div class="ns-title">⏰ Reminder Schedule</div>
+          <div class="form-row" style="max-width:400px;margin-top:0.5rem">
+            <div class="field"><label>First warning (days before)</label>
+              <select id="warnDays" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:0.7rem;color:var(--text);font-family:var(--font-body);outline:none;width:100%">
+                <option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option>
+              </select>
+            </div>
+            <div class="field"><label>Urgent alert (days before)</label>
+              <select id="urgentDays" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:0.7rem;color:var(--text);font-family:var(--font-body);outline:none;width:100%">
+                <option value="2">2 days</option><option value="3">3 days</option><option value="5">5 days</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-prim" style="margin-top:0.5rem" onclick="saveAlertSettings()">Save Settings</button>
+        </div>
+
+        <div class="notif-settings">
+          <div class="ns-title">👁 Email Preview</div>
+          <div class="email-preview">
+            <div class="em-subject">🔴 Engine Oil overdue — Honda City</div>
+            <div class="em-from">From: RevTrack &lt;dravidbabu11@gmail.com&gt; · To: you@example.com</div>
+            <div class="em-body">Hi Arjun,<br><br>Your <strong>Honda City</strong> engine oil change is now <span style="color:var(--red)"><strong>500 km overdue</strong></span>.<br><br>Last changed: 9,500 km · Due at: 10,000 km · Current: 10,500 km<br>Oil to use: 5W-30 Synthetic, 3.5L<br><br>Continued driving with degraded oil increases engine wear significantly.<div class="em-cta">View Service Details →</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── ADD VEHICLE ─── -->
+      <div class="view fu" id="V_addVehicle">
+        <div class="page-h"><div class="breadcrumb">Home › Vehicles › <span>Add New</span></div><h1>Add Vehicle</h1><p>Register your vehicle to auto-generate its full service schedule</p></div>
+        <div class="av-form">
+          <div class="fsec">
+            <div class="fsec-title">Vehicle Type</div>
+            <div class="vt-row" id="vtRow">
+              <div class="vt-b sel" data-type="car" onclick="selVT(this)"><div class="vi">🚗</div><div class="vl">Car</div></div>
+              <div class="vt-b" data-type="bike" onclick="selVT(this)"><div class="vi">🏍</div><div class="vl">Bike / Motorcycle</div></div>
+            </div>
+          </div>
+          <div class="fsec">
+            <div class="fsec-title">Basic Info</div>
+            <div class="form-row">
+              <div class="field"><label>Make / Brand</label>
+                <select id="av_make">
+                  <option value="">Select make</option>
+                  <optgroup label="Cars"><option>Hyundai</option><option>Toyota</option><option>Honda</option><option>Maruti Suzuki</option><option>Tata</option><option>Mahindra</option><option>Kia</option><option>MG</option><option>Volkswagen</option><option>Skoda</option><option>Ford</option><option>Renault</option></optgroup>
+                  <optgroup label="Bikes"><option>Royal Enfield</option><option>Honda</option><option>Yamaha</option><option>Bajaj</option><option>TVS</option><option>Hero</option><option>KTM</option><option>Suzuki</option><option>Kawasaki</option><option>Triumph</option></optgroup>
+                </select>
+              </div>
+              <div class="field"><label>Model</label><input type="text" id="av_model" placeholder="e.g. CB500X, i20, Fortuner"></div>
+            </div>
+            <div class="form-row">
+              <div class="field"><label>Year</label>
+                <select id="av_year">
+                  <option>2025</option><option>2024</option><option>2023</option><option>2022</option><option selected>2021</option><option>2020</option><option>2019</option><option>2018</option><option>2017</option><option>2016</option>
+                </select>
+              </div>
+              <div class="field"><label>Fuel Type</label>
+                <select id="av_fuel">
+                  <option value="petrol">Petrol</option><option value="diesel">Diesel</option><option value="cng">CNG</option><option value="electric">Electric</option><option value="hybrid">Hybrid</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field"><label>Registration No.</label><input type="text" id="av_reg" placeholder="TN-07-XX-1234"></div>
+              <div class="field"><label>Current Odometer (km)</label><input type="number" id="av_km" placeholder="18500" min="0"></div>
+            </div>
+          </div>
+          <div class="fsec">
+            <div class="fsec-title">Engine Details</div>
+            <div class="form-row">
+              <div class="field"><label>Engine Capacity</label><input type="text" id="av_cc" placeholder="1.2L / 471cc"></div>
+              <div class="field"><label>Transmission</label>
+                <select id="av_tx">
+                  <option>Manual</option><option>Automatic</option><option>CVT</option><option>DCT</option><option>AMT</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="fsec">
+            <div class="fsec-title">Notification Preferences</div>
+            <div class="toggle-row"><div class="tr-info"><div class="tl">Email reminders</div><div class="ts">Detailed email alerts with service specs</div></div><div class="toggle on em" id="av_em" onclick="this.classList.toggle('on')"></div></div>
+          </div>
+          <div class="form-error hidden" id="avError"></div>
+          <button class="btn-prim full" id="avBtn" onclick="addVehicle()">Add Vehicle &amp; Generate Service Schedule →</button>
+        </div>
+      </div>
+
+      <!-- ─── PROFILE ─── -->
+      <div class="view fu" id="V_profile">
+        <div class="page-h"><div class="breadcrumb">Home › <span>Profile</span></div><h1>Profile &amp; Settings</h1></div>
+        <div class="prof-grid">
+          <div class="prof-card">
+            <div class="prof-av" id="PR_AV">?</div>
+            <div class="prof-name" id="PR_NAME">—</div>
+            <div class="prof-email" id="PR_EMAIL">—</div>
+            <div class="prof-stats">
+              <div class="ps-it"><div class="ps-v" id="ps_vehicles">0</div><div class="ps-k">Vehicles</div></div>
+              <div class="ps-it"><div class="ps-v" id="ps_services">0</div><div class="ps-k">Services</div></div>
+              <div class="ps-it"><div class="ps-v" id="ps_alerts">0</div><div class="ps-k">Alerts Sent</div></div>
+              <div class="ps-it"><div class="ps-v">✓</div><div class="ps-k">Active</div></div>
+            </div>
+          </div>
+          <div class="settings-card">
+            <div class="settings-section">
+              <h3>Personal Information</h3>
+              <div class="form-row">
+                <div class="field"><label>First Name</label><input type="text" id="pf_first"></div>
+                <div class="field"><label>Last Name</label><input type="text" id="pf_last"></div>
+              </div>
+              <div class="field"><label>Email Address</label><input type="email" id="pf_email"></div>
+              <div class="form-row" style="margin-top:0.5rem">
+                <div class="field"><label>Warn days before</label>
+                  <select id="pf_warn" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:0.7rem;color:var(--text);font-family:var(--font-body);outline:none;width:100%">
+                    <option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option>
+                  </select>
+                </div>
+                <div class="field"><label>Urgent days before</label>
+                  <select id="pf_urgent" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:0.7rem;color:var(--text);font-family:var(--font-body);outline:none;width:100%">
+                    <option value="2">2 days</option><option value="3">3 days</option><option value="5">5 days</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-error hidden" id="profileError"></div>
+              <button class="btn-prim" style="font-size:0.83rem;padding:8px 20px;margin-top:0.5rem" onclick="saveProfile()">Save Changes</button>
+            </div>
+            <div class="settings-section">
+              <h3>Notification Channels</h3>
+              <div class="toggle-row"><div class="tr-info"><div class="tl">Email alerts</div><div class="ts">Receive detailed email reminders</div></div><div class="toggle" id="pf_em_toggle" onclick="this.classList.toggle('on')"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app-shell -->
+
+<!-- LOG SERVICE MODAL -->
+<div class="overlay" id="MODAL_LOG">
+  <div class="modal">
+    <div class="mh"><h2>Log Service</h2><button class="mclose" onclick="closeModal('MODAL_LOG')">✕</button></div>
+    <div class="mb">
+      <div class="form-row">
+        <div class="field"><label>Vehicle</label>
+          <select id="log_vehicle" onchange="loadCatalogueForVehicle()">
+            <option value="">Select vehicle</option>
+          </select>
+        </div>
+        <div class="field"><label>Service Type</label>
+          <select id="log_service">
+            <option value="">Select service</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Date Done</label><input type="date" id="log_date"></div>
+        <div class="field"><label>Odometer at Service (km)</label><input type="number" id="log_km" placeholder="32500" min="0"></div>
+      </div>
+      <div class="field"><label>Oil / Product Used</label><input type="text" id="log_spec" placeholder="e.g. 10W-30 Castrol, 2.1L"></div>
+      <div class="form-row">
+        <div class="field"><label>Cost (₹)</label><input type="number" id="log_cost" placeholder="850"></div>
+        <div class="field"><label>Workshop</label><input type="text" id="log_workshop" placeholder="Service center name"></div>
+      </div>
+      <div class="field"><label>Notes (optional)</label><input type="text" id="log_notes" placeholder="Any observations or remarks"></div>
+      <div class="modal-info">
+        <span style="color:var(--blue)">✉ Email</span> receipt will be sent automatically after logging.
+      </div>
+      <div class="form-error hidden" id="logError"></div>
+    </div>
+    <div class="mf">
+      <button class="btn-sec" onclick="closeModal('MODAL_LOG')">Cancel</button>
+      <button class="btn-prim" id="logBtn" onclick="logService()">Log Service →</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPDATE KM MODAL -->
+<div class="overlay" id="MODAL_KM">
+  <div class="modal" style="max-width:380px">
+    <div class="mh"><h2>Update Odometer</h2><button class="mclose" onclick="closeModal('MODAL_KM')">✕</button></div>
+    <div class="mb">
+      <p style="color:var(--text2);font-size:0.88rem;margin-bottom:1.2rem">Update current odometer reading for <strong id="km_vehicleName" style="color:var(--text)">vehicle</strong></p>
+      <div class="field"><label>Current Odometer (km)</label><input type="number" id="km_value" placeholder="32500" min="0"></div>
+    </div>
+    <div class="mf">
+      <button class="btn-sec" onclick="closeModal('MODAL_KM')">Cancel</button>
+      <button class="btn-prim" onclick="saveKm()">Update →</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS TOAST -->
+<div class="toast hidden" id="toast"></div>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+
+<!-- SET INTERVALS MODAL -->
+<div class="overlay" id="MODAL_INTERVAL">
+  <div class="modal" style="width:600px;max-height:90vh;display:flex;flex-direction:column">
+    <div class="mh" style="flex-shrink:0">
+      <div>
+        <h2>⏱ Set Service Intervals</h2>
+        <p style="font-size:12px;color:var(--text3);margin-top:3px">Set km, months, or both — alert fires when either is reached first</p>
+      </div>
+      <button class="mclose" onclick="closeModal('MODAL_INTERVAL')">✕</button>
+    </div>
+    <!-- tip -->
+    <div style="flex-shrink:0;padding:0.7rem 1.4rem;background:#EFF6FF;border-bottom:1px solid var(--border);font-size:12px;color:#2563EB;line-height:1.6">
+      💡 Example — Engine Oil: <strong>10,000 km</strong> or <strong>12 months</strong> · Chain Lube: <strong>500 km</strong> or <strong>1 month</strong>
+    </div>
+    <!-- header -->
+    <div style="flex-shrink:0;display:grid;grid-template-columns:1fr 230px;padding:0.5rem 1.4rem;background:var(--bg3);border-bottom:1.5px solid var(--border);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text4)">
+      <div>Service</div>
+      <div style="text-align:center">Distance &nbsp;/&nbsp; Time</div>
+    </div>
+    <!-- scrollable rows -->
+    <div id="intervalBody" style="flex:1;overflow-y:auto;min-height:0"></div>
+    <div class="mf" style="flex-shrink:0">
+      <button class="btn-sec" onclick="closeModal('MODAL_INTERVAL')">Cancel</button>
+      <button class="btn-prim" onclick="saveIntervals()">Save Intervals →</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
