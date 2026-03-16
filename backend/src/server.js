@@ -10,6 +10,8 @@ const routes      = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
+app.set('trust proxy', 1);   // tell Express it is behind a proxy (Render)
+
 const START_PORT = parseInt(process.env.PORT) || 5000;
 
 // ── Middleware ────────────────────────────────────────────────────────────
