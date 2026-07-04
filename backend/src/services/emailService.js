@@ -99,7 +99,7 @@ const emailBodies = {
        <tr><td style="padding:10px 0;color:#8892B0;font-size:13px;">Quantity needed</td>
            <td style="padding:10px 0;color:#ECEEFF;font-size:13px;text-align:right;">${d.qty || '—'}</td></tr>
      </table>
-     <a href="https://Mototrack.app" style="display:inline-block;background:#FF5C1A;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">View in MotoTrack →</a>`
+     <a href="https://mototrack-backend-feyv.onrender.com" style="display:inline-block;background:#FF5C1A;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">View in MotoTrack →</a>`
   ),
 
   overdue: (d) => baseHtml(
@@ -119,7 +119,7 @@ const emailBodies = {
            <td style="padding:8px 0;color:#ECEEFF;font-size:13px;text-align:right;">${d.qty || '—'}</td></tr>
      </table>
      <p style="font-size:13px;color:#8892B0;margin-bottom:20px;">⚠️ ${d.description || 'Delaying this service risks serious mechanical damage.'}</p>
-     <a href="https://Mototrack.app" style="display:inline-block;background:#E53935;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">Book Service Now →</a>`
+     <a href="https://mototrack-backend-feyv.onrender.com" style="display:inline-block;background:#E53935;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">Book Service Now →</a>`
   ),
 
   completion: (d) => baseHtml(
@@ -137,7 +137,7 @@ const emailBodies = {
        ${d.nextDueKm ? `<tr><td style="padding:10px 0;color:#8892B0;font-size:13px;">Next due</td>
             <td style="padding:10px 0;color:#4A9EFF;font-size:13px;font-weight:600;text-align:right;">${fmtReading(d.nextDueKm, d)}</td></tr>` : ''}
      </table>
-     <a href="https://Mototrack.app" style="display:inline-block;background:#1DB954;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">View Service Log →</a>`
+     <a href="https://mototrack-backend-feyv.onrender.com" style="display:inline-block;background:#1DB954;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">View Service Log →</a>`
   ),
 
   digest: (d) => baseHtml(
@@ -164,7 +164,7 @@ const emailBodies = {
        <p style="margin:0 0 12px;font-size:14px;font-weight:600;color:#E53935;">🔴 Overdue Services</p>
        ${d.overdueItems.map(it => `<p style="margin:0 0 8px;font-size:13px;color:#8892B0;">• <strong style="color:#ECEEFF">${it.vehicle}</strong> — ${it.service} (${it.overdueKm} ${it.unit || 'km'} overdue)</p>`).join('')}
      </div>` : ''}
-     <a href="https://Mototrack.app" style="display:inline-block;background:#FF5C1A;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">View Full Report →</a>`
+     <a href="https://mototrack-backend-feyv.onrender.com" style="display:inline-block;background:#FF5C1A;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">View Full Report →</a>`
   ),
 };
 
