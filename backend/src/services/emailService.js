@@ -22,6 +22,9 @@ const getTransporter = () => {
   return transporter;
 };
 
+await transporter.verify();
+console.log("SMTP connection verified");
+
 const readingUnit = (d) => d.unit || 'km';
 const fmtReading = (value, d) => `${Number(value || 0).toLocaleString()} ${readingUnit(d)}`;
 
