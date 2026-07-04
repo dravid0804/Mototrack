@@ -18,6 +18,13 @@ const getTransporter = () => {
       
     });
   }
+  try {
+    await transporter.verify();
+    console.log("SMTP connection verified");
+  } catch (err) {
+    console.error("SMTP verify failed:", err);
+    throw err;
+  }
   return transporter;
 };
 
