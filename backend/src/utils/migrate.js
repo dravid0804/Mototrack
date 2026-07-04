@@ -20,17 +20,34 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash   TEXT         NOT NULL,
   notify_whatsapp BOOLEAN      DEFAULT TRUE,
   notify_email    BOOLEAN      DEFAULT TRUE,
+  alert_warning   BOOLEAN      DEFAULT TRUE,
+  alert_urgent    BOOLEAN      DEFAULT TRUE,
+  alert_overdue   BOOLEAN      DEFAULT TRUE,
+  alert_completion BOOLEAN     DEFAULT TRUE,
+  alert_digest    BOOLEAN      DEFAULT FALSE,
+  alert_odometer  BOOLEAN      DEFAULT TRUE,
+  warn_km         INT          DEFAULT 100,
   warn_days       INT          DEFAULT 7,   -- first warning X days before due
-  urgent_days     INT          DEFAULT 3,   -- urgent reminder X days before due
+  urgent_days     INT          DEFAULT 10,  -- urgent reminder X days before due
   created_at      TIMESTAMPTZ  DEFAULT NOW(),
   updated_at      TIMESTAMPTZ  DEFAULT NOW()
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS alert_warning BOOLEAN DEFAULT TRUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS alert_urgent BOOLEAN DEFAULT TRUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS alert_overdue BOOLEAN DEFAULT TRUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS alert_completion BOOLEAN DEFAULT TRUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS alert_digest BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS alert_odometer BOOLEAN DEFAULT TRUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS warn_km INT DEFAULT 100;
+ALTER TABLE users ALTER COLUMN urgent_days SET DEFAULT 10;
+UPDATE users SET urgent_days = 10 WHERE urgent_days IS NULL OR urgent_days = 3;
 
 -- ── Vehicles ────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS vehicles (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id         UUID         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  type            VARCHAR(20)  NOT NULL CHECK (type IN ('car','bike')),
+  type            VARCHAR(20)  NOT NULL CHECK (type IN ('car','bike','tractor')),
   make            VARCHAR(80)  NOT NULL,
   model           VARCHAR(80)  NOT NULL,
   year            SMALLINT     NOT NULL,
@@ -42,17 +59,24 @@ CREATE TABLE IF NOT EXISTS vehicles (
   transmission    VARCHAR(30),
   color           VARCHAR(40),
   notes           TEXT,
+  notify_email    BOOLEAN      DEFAULT TRUE,
   is_active       BOOLEAN      DEFAULT TRUE,
   created_at      TIMESTAMPTZ  DEFAULT NOW(),
   updated_at      TIMESTAMPTZ  DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_vehicles_user ON vehicles(user_id);
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS notify_email BOOLEAN DEFAULT TRUE;
+DO $$ BEGIN
+  ALTER TABLE vehicles DROP CONSTRAINT IF EXISTS vehicles_type_check;
+  ALTER TABLE vehicles ADD CONSTRAINT vehicles_type_check
+    CHECK (type IN ('car','bike','tractor'));
+END $$;
 
 -- ── Service Interval Catalogue ───────────────────────────────────────────────
 -- Global defaults; can be overridden per vehicle in vehicle_service_config
 CREATE TABLE IF NOT EXISTS service_catalogue (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  vehicle_type    VARCHAR(10)  NOT NULL CHECK (vehicle_type IN ('car','bike','both')),
+  vehicle_type    VARCHAR(10)  NOT NULL CHECK (vehicle_type IN ('car','bike','tractor','both','all')),
   fuel_type       VARCHAR(20)  DEFAULT 'any',
   service_name    VARCHAR(120) NOT NULL,
   interval_km     INT,                  -- km interval (NULL = time-only)
@@ -62,6 +86,13 @@ CREATE TABLE IF NOT EXISTS service_catalogue (
   default_qty     VARCHAR(40),          -- e.g. "3.8 L"
   priority        VARCHAR(10)  DEFAULT 'normal' CHECK (priority IN ('critical','high','normal','low'))
 );
+DO $$ BEGIN
+  ALTER TABLE service_catalogue DROP CONSTRAINT IF EXISTS service_catalogue_vehicle_type_check;
+  ALTER TABLE service_catalogue ADD CONSTRAINT service_catalogue_vehicle_type_check
+    CHECK (vehicle_type IN ('car','bike','tractor','both','all'));
+END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_service_catalogue_scope
+  ON service_catalogue(vehicle_type, fuel_type, service_name);
 
 -- ── Per-Vehicle Service Config (overrides catalogue defaults) ────────────────
 CREATE TABLE IF NOT EXISTS vehicle_service_config (
@@ -111,6 +142,11 @@ CREATE TABLE IF NOT EXISTS notification_log (
   sent_at         TIMESTAMPTZ,
   created_at      TIMESTAMPTZ  DEFAULT NOW()
 );
+DO $$ BEGIN
+  ALTER TABLE notification_log DROP CONSTRAINT IF EXISTS notification_log_type_check;
+  ALTER TABLE notification_log ADD CONSTRAINT notification_log_type_check
+    CHECK (type IN ('warning','urgent','overdue','completion','digest','welcome','odometer'));
+END $$;
 CREATE INDEX IF NOT EXISTS idx_notif_user    ON notification_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_notif_vehicle ON notification_log(vehicle_id);
 

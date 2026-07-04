@@ -1,6 +1,7 @@
 // src/controllers/vehicleController.js
 const { query }  = require('../config/database');
 const { validationResult } = require('express-validator');
+const { runServiceAlerts } = require('../services/serviceAlertService');
 
 exports.list = async (req, res, next) => {
   try {
@@ -41,8 +42,8 @@ exports.create = async (req, res, next) => {
     await query(`
       INSERT INTO vehicle_service_config (vehicle_id, catalogue_id)
       SELECT $1, id FROM service_catalogue
-      WHERE  (vehicle_type = $2 OR vehicle_type = 'both')
-        AND  (fuel_type = 'any' OR fuel_type = $3)
+      WHERE  (vehicle_type = $2 OR vehicle_type = 'all' OR (vehicle_type = 'both' AND $2 IN ('car','bike')))
+        AND  (fuel_type = 'any' OR fuel_type = $3 OR (fuel_type = 'ice' AND $3 IN ('petrol','diesel','cng','hybrid')))
       ON CONFLICT DO NOTHING
     `, [vehicle.id, type, fuel_type || 'petrol']);
 
@@ -64,12 +65,28 @@ exports.get = async (req, res, next) => {
 exports.update = async (req, res, next) => {
   try {
     const { current_km, registration, color, notes } = req.body;
+    const fields = [];
+    const values = [];
+
+    if (current_km !== undefined) { values.push(current_km); fields.push(`current_km=$${values.length}`); }
+    if (registration !== undefined) { values.push(registration); fields.push(`registration=$${values.length}`); }
+    if (color !== undefined) { values.push(color); fields.push(`color=$${values.length}`); }
+    if (notes !== undefined) { values.push(notes); fields.push(`notes=$${values.length}`); }
+
+    if (!fields.length) {
+      return res.status(400).json({ success: false, message: 'No vehicle fields to update' });
+    }
+
+    values.push(req.params.id, req.user.id);
     const { rows: [vehicle] } = await query(
-      `UPDATE vehicles SET current_km=$1, registration=$2, color=$3, notes=$4
-       WHERE id=$5 AND user_id=$6 RETURNING *`,
-      [current_km, registration, color, notes, req.params.id, req.user.id]
+      `UPDATE vehicles SET ${fields.join(', ')}, updated_at=NOW()
+       WHERE id=$${values.length - 1} AND user_id=$${values.length} RETURNING *`,
+      values
     );
     if (!vehicle) return res.status(404).json({ success: false, message: 'Vehicle not found' });
+    if (current_km !== undefined) {
+      await runServiceAlerts({ vehicleId: vehicle.id });
+    }
     res.json({ success: true, vehicle });
   } catch (err) { next(err); }
 };
@@ -150,8 +167,8 @@ exports.resync = async (req, res, next) => {
     const result = await query(`
       INSERT INTO vehicle_service_config (vehicle_id, catalogue_id)
       SELECT $1, id FROM service_catalogue
-      WHERE (vehicle_type = $2 OR vehicle_type = 'both')
-        AND (fuel_type = 'any' OR fuel_type = $3)
+      WHERE (vehicle_type = $2 OR vehicle_type = 'all' OR (vehicle_type = 'both' AND $2 IN ('car','bike')))
+        AND (fuel_type = 'any' OR fuel_type = $3 OR (fuel_type = 'ice' AND $3 IN ('petrol','diesel','cng','hybrid')))
       ON CONFLICT DO NOTHING
     `, [vehicle.id, vehicle.type, vehicle.fuel_type]);
 
@@ -196,24 +213,26 @@ exports.health = async (req, res, next) => {
         WHERE vehicle_id=$1 AND catalogue_id=sc.id
         ORDER BY done_km DESC, done_at DESC LIMIT 1
       ) sr ON TRUE
+      WHERE  (sc.vehicle_type = $2 OR sc.vehicle_type = 'all' OR (sc.vehicle_type = 'both' AND $2 IN ('car','bike')))
+        AND  (sc.fuel_type = 'any' OR sc.fuel_type = $3 OR (sc.fuel_type = 'ice' AND $3 IN ('petrol','diesel','cng','hybrid')))
       ORDER BY sc.priority, sc.service_name
-    `, [vehicle.id]);
+      `, [vehicle.id, vehicle.type, vehicle.fuel_type]);
 
     const currentKm = vehicle.current_km;
     const enriched  = services.map(svc => {
       // Always recalculate nextDueKm from the CURRENT interval (never trust stale service_records value)
       let nextDueKm = null;
-      if (svc.done_km && svc.interval_km) {
-        nextDueKm = parseInt(svc.done_km) + parseInt(svc.interval_km);
+      if (svc.interval_km) {
+        nextDueKm = (parseInt(svc.done_km, 10) || 0) + parseInt(svc.interval_km, 10);
       } else if (svc.next_due_km) {
         nextDueKm = svc.next_due_km; // fallback only if no done_km+interval
       }
 
       // Recalculate nextDueDate from current interval_months
       let nextDueDate = null;
-      if (svc.done_at && svc.interval_months) {
-        const d = new Date(svc.done_at);
-        d.setMonth(d.getMonth() + parseInt(svc.interval_months));
+      if (svc.interval_months) {
+        const d = new Date(svc.done_at || vehicle.created_at || Date.now());
+        d.setMonth(d.getMonth() + parseInt(svc.interval_months, 10));
         nextDueDate = d;
       } else if (svc.next_due_date) {
         nextDueDate = svc.next_due_date;
@@ -229,8 +248,10 @@ exports.health = async (req, res, next) => {
         : null;
 
       // Status: use the WORST condition between km and date
-      const kmStatus   = kmLeft   == null ? 'unknown' : kmLeft   < 0 ? 'overdue' : kmLeft   <= 300 ? 'urgent' : kmLeft   <= 800 ? 'warning' : 'ok';
-      const dateStatus = daysLeft == null ? 'unknown' : daysLeft < 0 ? 'overdue' : daysLeft <= 3   ? 'urgent' : daysLeft <= 7   ? 'warning' : 'ok';
+      const warnKm = parseInt(req.user.warn_km, 10) || 100;
+      const warnDays = parseInt(req.user.warn_days, 10) || 7;
+      const kmStatus   = kmLeft   == null ? 'unknown' : kmLeft   < 0 ? 'overdue' : kmLeft   <= 50 ? 'urgent' : kmLeft   <= warnKm ? 'warning' : 'ok';
+      const dateStatus = daysLeft == null ? 'unknown' : daysLeft < 0 ? 'overdue' : daysLeft <= 10 ? 'urgent' : daysLeft <= warnDays ? 'warning' : 'ok';
       const statusOrder = { overdue: 0, urgent: 1, warning: 2, ok: 3, unknown: 4 };
       const status = statusOrder[kmStatus] <= statusOrder[dateStatus] ? kmStatus : dateStatus;
 

@@ -1,28 +1,13 @@
 const { Pool } = require("pg");
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  connectionString: process.env.DATABASE_URL ||
+    `postgresql://${process.env.DB_USER||'postgres'}:${process.env.DB_PASSWORD}@${process.env.DB_HOST||'localhost'}:${process.env.DB_PORT||5432}/${process.env.DB_NAME||'revtrack'}`,
+  ssl: false,
 });
 
-// log connection success
-pool.on("connect", () => {
-  console.log("✅ PostgreSQL connected");
-});
+pool.on("connect", () => console.log("✅ PostgreSQL connected"));
+pool.on("error", (err) => console.error("❌ PostgreSQL error:", err.message));
 
-// log errors
-pool.on("error", (err) => {
-  console.error("❌ PostgreSQL error:", err);
-});
-
-// query helper function
-const query = (text, params) => {
-  return pool.query(text, params);
-};
-
-module.exports = {
-  query,
-  pool
-};
+const query = (text, params) => pool.query(text, params);
+module.exports = { query, pool };

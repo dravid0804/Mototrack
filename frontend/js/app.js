@@ -7,9 +7,13 @@ const STATE = {
 };
 
 function $(id) { return document.getElementById(id); }
-function fmtKm(n) { return n != null ? Number(n).toLocaleString() + ' km' : '—'; }
+function readingUnit(type) { return type === 'tractor' ? 'hrs' : 'km'; }
+function fmtReading(n, type) { return n != null ? Number(n).toLocaleString() + ' ' + readingUnit(type) : '—'; }
+function fmtKm(n) { return fmtReading(n, 'car'); }
 function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'; }
 function initials(u) { return ((u.first_name?.[0] || '') + (u.last_name?.[0] || '')).toUpperCase() || '?'; }
+function vehicleIcon(type) { return type === 'bike' ? '🏍' : type === 'tractor' ? '🚜' : '🚗'; }
+function vehicleLabel(type) { return type === 'bike' ? 'Bike' : type === 'tractor' ? 'Tractor' : 'Car'; }
 
 function showToast(msg, type = 'success') {
   const t = $('toast');
@@ -32,7 +36,18 @@ function goPage(id) {
 }
 function logout() {
   api.clearToken(); STATE.user = null; STATE.vehicles = [];
+  sessionStorage.removeItem('rt_view');
+  sessionStorage.removeItem('rt_vehicle_id');
   $('P_app').classList.remove('active'); goPage('P_login');
+}
+
+function toggleLoginPassword() {
+  const input = $('li_pass');
+  const btn = $('li_pass_toggle');
+  if (!input || !btn) return;
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btn.textContent = showing ? 'Show' : 'Hide';
 }
 
 async function login() {
@@ -43,7 +58,7 @@ async function login() {
   try {
     const d = await api.login(email, pass);
     api.setToken(d.token); STATE.user = d.user; await bootApp();
-  } catch (e) { showError('loginError', e.message || 'Invalid credentials.'); }
+  } catch (e) { showError('loginError', 'Email or password is incorrect.'); }
   finally { setLoading('loginBtn', false, 'Sign in →'); }
 }
 
@@ -55,10 +70,13 @@ async function register() {
   if (!first || !email || !pass) return showError('registerError', 'First name, email and password are required.');
   if (pass.length < 8) return showError('registerError', 'Password must be at least 8 characters.');
   try {
-    const d = await api.register({ first_name: first, last_name: last, email, phone: phone || null, password: pass, notify_email: true, notify_whatsapp: !!phone });
-    api.setToken(d.token); STATE.user = d.user;
-    await bootApp();
-    nav(document.querySelector('[data-view=addVehicle]'));
+    await api.register({ first_name: first, last_name: last, email, phone: phone || null, password: pass, notify_email: true, notify_whatsapp: !!phone });
+    api.clearToken();
+    $('li_email').value = email;
+    $('li_pass').value = '';
+    ['r_first', 'r_last', 'r_email', 'r_pass'].forEach(id => { if ($(id)) $(id).value = ''; });
+    goPage('P_login');
+    showToast('Account created. Please sign in to continue.');
   } catch (e) { showError('registerError', e.message || 'Registration failed.'); }
 }
 
@@ -69,6 +87,7 @@ async function bootApp() {
   $('P_app').classList.add('active');
   await Promise.all([loadVehicles(), loadDashboard(), loadNotifBadge()]);
   fillProfileForm();
+  restoreAppView();
 }
 
 function hydrateUser(u) {
@@ -90,6 +109,9 @@ const VTITLES = {
 function nav(el) {
   if (!el) return;
   const id = el.getAttribute('data-view');
+  if (!id) return;
+  sessionStorage.setItem('rt_view', id);
+  sessionStorage.removeItem('rt_vehicle_id');
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   const v = $('V_' + id);
   if (v) { v.classList.add('active'); v.classList.add('fu'); setTimeout(() => v.classList.remove('fu'), 400); }
@@ -101,13 +123,30 @@ function nav(el) {
   if (id === 'upcoming')      loadUpcoming();
   if (id === 'notifications') loadNotifications('');
   if (id === 'profile')       fillProfileForm();
+  if (id === 'alerts')        fillAlertSettings();
+}
+
+function restoreAppView() {
+  const savedView = sessionStorage.getItem('rt_view');
+  const savedVehicleId = sessionStorage.getItem('rt_vehicle_id');
+  if (savedView === 'vehicleDetail' && savedVehicleId) {
+    openVehicleDetail(savedVehicleId);
+    return;
+  }
+  if (savedView && savedView !== 'dashboard') {
+    const el = document.querySelector(`[data-view="${savedView}"]`);
+    if (el) nav(el);
+  }
 }
 
 async function loadNotifBadge() {
   try {
     const d = await api.getUpcoming();
     const c = (d.upcoming || []).filter(u => u.status === 'overdue' || u.status === 'urgent').length;
-    $('NB').textContent = c; $('TOP_NB').textContent = c;
+    ['NB', 'TOP_NB'].forEach(id => {
+      const el = $(id);
+      if (el) el.classList.toggle('hidden', c === 0);
+    });
   } catch (e) {}
 }
 
@@ -161,7 +200,7 @@ function openPredModal(km, type, vehicleName) {
       <div style="padding:1.25rem 1.5rem;border-bottom:1.5px solid #E2E8F0;display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:#fff;border-radius:16px 16px 0 0;z-index:1">
         <div>
           <div style="font-size:1.05rem;font-weight:800;color:#0F172A">🔍 Odometer Health Predictions</div>
-          <div style="font-size:12px;color:#64748B;margin-top:3px">${vehicleName} · ${Number(km).toLocaleString()} km · ${checks.length} checks triggered</div>
+          <div style="font-size:12px;color:#64748B;margin-top:3px">${vehicleName} · ${fmtReading(km, type)} · ${checks.length} checks triggered</div>
         </div>
         <button onclick="document.getElementById('PRED_MODAL').remove()" style="background:#F1F5F9;border:none;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:0.9rem">✕</button>
       </div>
@@ -208,7 +247,7 @@ async function loadDashboard() {
     const dueSoon = upcoming.filter(u => u.status === 'warning' || u.status === 'urgent').length;
 
     $('dashStats').innerHTML = `
-      <div class="sc"><div class="sc-accent" style="background:var(--accent)"></div><div class="sc-label">Total Vehicles</div><div class="sc-val">${vehicles.length}</div><div class="sc-sub">${vehicles.filter(v=>v.type==='car').length} Cars · ${vehicles.filter(v=>v.type==='bike').length} Bikes</div></div>
+      <div class="sc"><div class="sc-accent" style="background:var(--accent)"></div><div class="sc-label">Total Vehicles</div><div class="sc-val">${vehicles.length}</div><div class="sc-sub">${vehicles.filter(v=>v.type==='car').length} Cars · ${vehicles.filter(v=>v.type==='bike').length} Bikes · ${vehicles.filter(v=>v.type==='tractor').length} Tractors</div></div>
       <div class="sc"><div class="sc-accent" style="background:var(--red)"></div><div class="sc-label">Overdue</div><div class="sc-val">${overdue}</div><div class="sc-sub">Action required now</div></div>
       <div class="sc"><div class="sc-accent" style="background:var(--amber)"></div><div class="sc-label">Due Soon</div><div class="sc-val">${dueSoon}</div><div class="sc-sub">Schedule soon</div></div>
       <div class="sc"><div class="sc-accent" style="background:var(--green)"></div><div class="sc-label">Services Done</div><div class="sc-val">${services.length}</div><div class="sc-sub">Total logged</div></div>`;
@@ -238,7 +277,8 @@ async function loadDashboard() {
 function upRow(u) {
   const ico = u.service_name?.toLowerCase().includes('oil') ? '🛢' : u.service_name?.toLowerCase().includes('brake') ? '🔵' : u.service_name?.toLowerCase().includes('air') ? '🌬' : u.service_name?.toLowerCase().includes('chain') ? '⛓' : '🔧';
   const cls = u.status === 'overdue' ? 'due-red' : u.status === 'urgent' ? 'due-warn' : 'due-ok';
-  const lbl = u.status === 'overdue' ? 'Overdue' : u.kmLeft != null ? `${u.kmLeft} km left` : 'Due soon';
+  const unit = u.unit || readingUnit(u.vehicleType);
+  const lbl = u.status === 'overdue' ? 'Overdue' : u.kmLeft != null ? `${u.kmLeft} ${unit} left` : 'Due soon';
   const bg  = u.status === 'overdue' ? 'var(--red-dim)' : u.status === 'urgent' ? 'var(--amber-dim)' : 'var(--green-dim)';
   return `<div class="up-item"><div class="up-ico" style="background:${bg}">${ico}</div><div class="up-info"><div class="up-svc">${u.service_name}</div><div class="up-veh">${u.vehicleName}</div></div><div class="up-due ${cls}">${lbl}</div></div>`;
 }
@@ -255,17 +295,19 @@ function populateSelects() {
 }
 
 function vehicleCard(v) {
-  const emoji = v.type === 'bike' ? '🏍' : '🚗';
-  const bg = v.type === 'bike' ? 'linear-gradient(135deg,#ECFEFF,#CFFAFE)' : 'linear-gradient(135deg,#EFF6FF,#DBEAFE)';
+  const emoji = vehicleIcon(v.type);
+  const bg = v.type === 'bike'
+    ? 'linear-gradient(135deg,#ECFEFF,#CFFAFE)'
+    : v.type === 'tractor' ? 'linear-gradient(135deg,#F0FDF4,#DCFCE7)' : 'linear-gradient(135deg,#EFF6FF,#DBEAFE)';
   return `<div class="vh-card" onclick="openVehicleDetail('${v.id}')">
     <div class="vh-img" style="background:${bg}">
       <div class="vh-emoji">${emoji}</div>
-      <div class="vh-badge-type">${v.type === 'bike' ? 'Bike' : 'Car'} · ${v.fuel_type}</div>
+      <div class="vh-badge-type">${vehicleLabel(v.type)} · ${v.fuel_type}</div>
       <div class="vh-sdot sdot-warn"></div>
     </div>
     <div class="vh-body">
       <div class="vh-name">${v.make} ${v.model}</div>
-      <div class="vh-sub">${v.year} · ${v.registration || '—'} · ${fmtKm(v.current_km)}</div>
+      <div class="vh-sub">${v.year} · ${v.registration || '—'} · ${fmtReading(v.current_km, v.type)}</div>
       <div class="vh-pills">
         <span class="pill pill-ok">${v.fuel_type}</span>
         <span class="pill pill-ok">${v.transmission || 'Manual'}</span>
@@ -289,6 +331,8 @@ async function loadVehiclesView() {
 // ── VEHICLE DETAIL ────────────────────────────────────────────────────────
 async function openVehicleDetail(id) {
   STATE.currentVehicleId = id;
+  sessionStorage.setItem('rt_view', 'vehicleDetail');
+  sessionStorage.setItem('rt_vehicle_id', id);
   $('VD_CONTENT').innerHTML = '<div class="loading-row" style="padding:3rem;text-align:center">Loading vehicle data…</div>';
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   $('V_vehicleDetail').classList.add('active');
@@ -304,7 +348,7 @@ async function openVehicleDetail(id) {
     STATE.currentVehicleSvcs = svcs;
     STATE.currentVehicle     = v;
 
-    const emoji    = v.type === 'bike' ? '🏍' : '🚗';
+    const emoji    = vehicleIcon(v.type);
     const overdue  = svcs.filter(s => s.status === 'overdue').length;
     const warn     = svcs.filter(s => s.status === 'warning' || s.status === 'urgent').length;
     const ok       = svcs.filter(s => s.status === 'ok').length;
@@ -318,9 +362,9 @@ async function openVehicleDetail(id) {
           <h1>${v.make} ${v.model}</h1>
           <p>${v.year} · ${v.registration || '—'} · ${v.engine_cc || ''} · ${v.transmission || ''}</p>
           <div class="vd-chips">
-            <span class="chip">${v.type === 'bike' ? 'Bike' : 'Car'}</span>
+            <span class="chip">${vehicleLabel(v.type)}</span>
             <span class="chip">${v.fuel_type}</span>
-            <span class="chip">${fmtKm(v.current_km)}</span>
+            <span class="chip">${fmtReading(v.current_km, v.type)}</span>
           </div>
         </div>
         <div class="vd-pred-btn">
@@ -334,7 +378,7 @@ async function openVehicleDetail(id) {
       <div class="vd-actions">
         <button class="btn-prim" style="font-size:0.82rem;padding:7px 14px" onclick="openLogModalFor('${v.id}')">＋ Log Service</button>
         <button class="btn-sec"  style="font-size:0.82rem;padding:7px 14px" onclick="openIntervalModal('${v.id}')">⏱ Set Intervals</button>
-        <button class="btn-sec"  style="font-size:0.82rem;padding:7px 14px" onclick="openKmModal('${v.id}','${v.make} ${v.model}',${v.current_km})">Update Odometer</button>
+        <button class="btn-sec"  style="font-size:0.82rem;padding:7px 14px" onclick="openKmModal('${v.id}','${v.make} ${v.model}',${v.current_km},'${v.type}')">Update Reading</button>
         ${svcs.length === 0 ? `<button class="btn-sec" style="font-size:0.82rem;padding:7px 14px;color:var(--green);border-color:var(--green)" onclick="resyncVehicle('${v.id}')">⟳ Sync Services</button>` : ''}
         <button class="btn-sec"  style="font-size:0.82rem;padding:7px 14px;color:var(--text3)" onclick="confirmDeleteVehicle('${v.id}','${v.make} ${v.model}')">Remove</button>
       </div>
@@ -356,6 +400,7 @@ async function openVehicleDetail(id) {
 
       <div class="svc-grid">`;
 
+    const unit = readingUnit(v.type);
     svcs.forEach(s => {
       const pct   = s.pct != null ? Math.min(100, s.pct) : 0;
       const pc    = s.status === 'overdue' ? 'pf-r' : s.status === 'warning' || s.status === 'urgent' ? 'pf-a' : 'pf-g';
@@ -363,10 +408,10 @@ async function openVehicleDetail(id) {
       const bt    = s.status === 'overdue' ? 'Overdue' : s.status === 'warning' ? 'Due Soon' : s.status === 'urgent' ? 'Urgent' : 'Healthy';
       const bcolor = s.status === 'overdue' ? 'var(--red)' : s.status === 'warning' || s.status === 'urgent' ? 'var(--amber)' : 'var(--green)';
       const leftTxt = s.kmLeft == null ? '—'
-        : s.kmLeft < 0   ? `<span style="color:var(--red);font-weight:800">${Math.abs(s.kmLeft).toLocaleString()} km overdue</span>`
-        : s.kmLeft < 500 ? `<span style="color:var(--red);font-weight:800">${s.kmLeft.toLocaleString()} km left</span>`
-        : s.kmLeft < 1500? `<span style="color:var(--amber);font-weight:700">${s.kmLeft.toLocaleString()} km left</span>`
-        :                  `<span style="color:var(--green);font-weight:700">${s.kmLeft.toLocaleString()} km left</span>`;
+        : s.kmLeft < 0   ? `<span style="color:var(--red);font-weight:800">${Math.abs(s.kmLeft).toLocaleString()} ${unit} overdue</span>`
+        : s.kmLeft < 500 ? `<span style="color:var(--red);font-weight:800">${s.kmLeft.toLocaleString()} ${unit} left</span>`
+        : s.kmLeft < 1500? `<span style="color:var(--amber);font-weight:700">${s.kmLeft.toLocaleString()} ${unit} left</span>`
+        :                  `<span style="color:var(--green);font-weight:700">${s.kmLeft.toLocaleString()} ${unit} left</span>`;
 
       // Safe IDs for inline editing
       const safeId = s.catalogue_id ? s.catalogue_id.replace(/-/g,'') : 'x';
@@ -378,10 +423,10 @@ async function openVehicleDetail(id) {
             <span class="badge ${bc}"><span class="b-dot"></span>${bt}</span>
           </div>
           <div class="svc-rows">
-            <div class="r"><span class="rk">Last done at</span><span class="rv">${s.done_km ? fmtKm(s.done_km) : '<span style="color:var(--text4)">Never</span>'}</span></div>
-            <div class="r"><span class="rk">Service interval</span><span class="rv">${[s.interval_km ? fmtKm(s.interval_km) : '', s.interval_months ? s.interval_months + ' months' : ''].filter(Boolean).join(' / ') || '—'}</span></div>
-            <div class="r"><span class="rk">Next due at</span><span class="rv">${s.nextDueKm ? fmtKm(s.nextDueKm) : '—'}</span></div>
-            <div class="r"><span class="rk">Remaining (km)</span><span class="rv">${leftTxt}</span></div>
+            <div class="r"><span class="rk">Last done at</span><span class="rv">${s.done_km ? fmtReading(s.done_km, v.type) : '<span style="color:var(--text4)">Never</span>'}</span></div>
+            <div class="r"><span class="rk">Service interval</span><span class="rv">${[s.interval_km ? fmtReading(s.interval_km, v.type) : '', s.interval_months ? s.interval_months + ' months' : ''].filter(Boolean).join(' / ') || '—'}</span></div>
+            <div class="r"><span class="rk">Next due at</span><span class="rv">${s.nextDueKm ? fmtReading(s.nextDueKm, v.type) : '—'}</span></div>
+            <div class="r"><span class="rk">Remaining (${unit})</span><span class="rv">${leftTxt}</span></div>
             ${s.daysLeft != null ? `<div class="r"><span class="rk">Remaining (time)</span><span class="rv">${
               // Colour daysLeft based on WORST status (km overdue overrides days green)
               s.daysLeft < 0
@@ -499,6 +544,7 @@ let _intVehicleId = null;
 function openIntervalModal(vehicleId) {
   _intVehicleId = vehicleId;
   const svcs = STATE.currentVehicleSvcs || [];
+  const unit = readingUnit(STATE.currentVehicle?.type);
 
   if (!svcs.length) {
     $('intervalBody').innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text4)">No services found.<br>Click ⟳ Sync Services on the vehicle page first.</div>';
@@ -518,7 +564,7 @@ function openIntervalModal(vehicleId) {
     // Show default value as placeholder hint
     const defKm = s.default_interval_km || s.interval_km;
     const defMo = s.default_interval_months || s.interval_months;
-    const defLabel = [defKm ? defKm.toLocaleString() + ' km' : '', defMo ? defMo + ' mo' : ''].filter(Boolean).join(' / ') || 'No default';
+    const defLabel = [defKm ? defKm.toLocaleString() + ' ' + unit : '', defMo ? defMo + ' mo' : ''].filter(Boolean).join(' / ') || 'No default';
 
     return `
     <div class="int-row" id="int-row-${i}">
@@ -538,10 +584,10 @@ function openIntervalModal(vehicleId) {
             data-catalogue-id="${s.catalogue_id}"
             data-index="${i}"
             value="${s.interval_km || ''}"
-            placeholder="${defKm || 'km'}"
-            min="100" step="500"
+            placeholder="${defKm || unit}"
+            min="1" step="${unit === 'hrs' ? '10' : '500'}"
           >
-          <span class="int-unit-tag">km</span>
+          <span class="int-unit-tag">${unit}</span>
         </div>
         <span class="int-or">or</span>
         <div class="int-field-wrap">
@@ -617,7 +663,7 @@ async function addVehicle() {
   try {
     await api.addVehicle({ type, make, model, year, fuel_type: fuel, registration: reg, current_km: km, engine_cc: cc, transmission: tx });
     showToast('Vehicle added! Service schedule generated.');
-    await loadVehicles();
+    await Promise.all([loadVehicles(), loadDashboard(), loadNotifBadge()]);
     $('av_model').value = ''; $('av_reg').value = ''; $('av_km').value = '';
     nav(document.querySelector('[data-view=vehicles]'));
   } catch (e) { showError('avError', e.message || 'Failed to add vehicle.'); }
@@ -638,9 +684,9 @@ async function loadServiceLog() {
         <div><div class="st-svc">${r.service_name}</div><div class="st-det">${r.spec_used || '—'}</div></div>
         <div style="font-size:0.83rem;color:var(--text2)">${r.make || ''} ${r.model || ''}</div>
         <div style="font-size:0.82rem;color:var(--text3)">${fmtDate(r.done_at)}</div>
-        <div style="font-size:0.85rem;font-weight:700">${fmtKm(r.done_km)}</div>
+        <div style="font-size:0.85rem;font-weight:700">${fmtReading(r.done_km, r.vehicle_type)}</div>
         <div><span class="badge b-ok"><span class="b-dot"></span>Done</span></div>
-        <div style="font-size:0.82rem;color:var(--green);font-weight:700">${r.next_due_km ? fmtKm(r.next_due_km) : '—'}</div>
+        <div style="font-size:0.82rem;color:var(--green);font-weight:700">${r.next_due_km ? fmtReading(r.next_due_km, r.vehicle_type) : '—'}</div>
       </div>`).join('');
   } catch (e) { body.innerHTML = `<div class="loading-row">Error: ${e.message}</div>`; }
 }
@@ -655,12 +701,13 @@ async function loadUpcoming() {
     el.innerHTML = list.map(u => {
       const cls = u.status === 'overdue' ? 'ni-due' : u.status === 'urgent' || u.status === 'warning' ? 'ni-warn' : '';
       const ico = u.status === 'overdue' ? '🚨' : '⚠';
-      const lbl = u.status === 'overdue' ? `Overdue by ${Math.abs(u.kmLeft)} km` : u.kmLeft != null ? `${u.kmLeft} km left` : 'Due soon';
+      const unit = u.unit || readingUnit(u.vehicleType);
+      const lbl = u.status === 'overdue' ? `Overdue by ${Math.abs(u.kmLeft)} ${unit}` : u.kmLeft != null ? `${u.kmLeft} ${unit} left` : 'Due soon';
       return `<div class="ni-item ${cls}" style="margin-bottom:8px">
         <div class="ni-ico" style="background:${u.status==='overdue'?'var(--red-dim)':'var(--amber-dim)'}">${ico}</div>
         <div style="flex:1">
           <div class="ni-title">${u.service_name} — ${u.vehicleName}</div>
-          <div class="ni-msg">${u.registration || ''} · Current: ${fmtKm(u.currentKm)} · Due at: ${fmtKm(u.nextDueKm)} · <strong>${lbl}</strong><br>Spec: ${u.spec || 'Per manufacturer'} · Qty: ${u.qty || '—'}</div>
+          <div class="ni-msg">${u.registration || ''} · Current: ${fmtReading(u.currentKm, u.vehicleType)} · Due at: ${fmtReading(u.nextDueKm, u.vehicleType)} · <strong>${lbl}</strong><br>Spec: ${u.spec || 'Per manufacturer'} · Qty: ${u.qty || '—'}</div>
           <div class="ni-meta"><span class="ni-time">Priority: ${u.priority || 'normal'}</span></div>
         </div>
       </div>`;
@@ -725,29 +772,44 @@ async function logService() {
   const date = $('log_date').value, km = parseInt($('log_km').value);
   const spec = $('log_spec').value.trim(), cost = parseFloat($('log_cost').value) || null;
   const ws = $('log_workshop').value.trim(), notes = $('log_notes').value.trim();
-  if (!vid || !date || !km) return showError('logError', 'Vehicle, date and odometer are required.');
+  if (!vid || !date || !km) return showError('logError', 'Vehicle, date and reading are required.');
   setLoading('logBtn', true);
   try {
     await api.logService({ vehicle_id: vid, catalogue_id: svc || null, service_name: svcName, done_at: date, done_km: km, spec_used: spec, cost, workshop: ws, notes });
     closeModal('MODAL_LOG');
     showToast('Service logged! Email confirmation sent.');
-    await Promise.all([loadDashboard(), loadNotifBadge()]);
-    if ($('V_servicelog').classList.contains('active')) loadServiceLog();
-    if ($('V_vehicleDetail').classList.contains('active') && STATE.currentVehicleId) openVehicleDetail(STATE.currentVehicleId);
+    await Promise.all([loadVehicles(), loadDashboard(), loadNotifBadge()]);
+    if ($('V_servicelog').classList.contains('active')) await loadServiceLog();
+    if ($('V_upcoming').classList.contains('active')) await loadUpcoming();
+    if ($('V_vehicles').classList.contains('active')) await loadVehiclesView();
+    if ($('V_vehicleDetail').classList.contains('active') && STATE.currentVehicleId) await openVehicleDetail(STATE.currentVehicleId);
   } catch (e) { showError('logError', e.message || 'Failed to log service.'); }
   finally { setLoading('logBtn', false); $('logBtn').textContent = 'Log Service →'; }
 }
 
 // ── UPDATE KM MODAL ───────────────────────────────────────────────────────
 let _kmVehicleId = null;
-function openKmModal(id, name, cur) { _kmVehicleId = id; $('km_vehicleName').textContent = name; $('km_value').value = cur || ''; $('MODAL_KM').classList.add('open'); }
+let _kmVehicleType = 'car';
+function openKmModal(id, name, cur, type = 'car') {
+  _kmVehicleId = id;
+  _kmVehicleType = type;
+  $('km_vehicleName').textContent = name;
+  $('km_value').value = cur || '';
+  const unit = readingUnit(type);
+  if ($('km_modal_title')) $('km_modal_title').textContent = type === 'tractor' ? 'Update Hours' : 'Update Odometer';
+  if ($('km_modal_text')) $('km_modal_text').innerHTML = `Update current ${unit} reading for <strong id="km_vehicleName" style="color:var(--text)">${name}</strong>`;
+  if ($('km_value_label')) $('km_value_label').textContent = `Current Reading (${unit})`;
+  $('MODAL_KM').classList.add('open');
+}
 async function saveKm() {
   const km = parseInt($('km_value').value); if (!km || km < 0) return;
   try {
     await api.updateVehicle(_kmVehicleId, { current_km: km });
-    closeModal('MODAL_KM'); showToast('Odometer updated.');
-    if (STATE.currentVehicleId) openVehicleDetail(STATE.currentVehicleId);
-    await loadVehicles();
+    closeModal('MODAL_KM'); showToast(`${readingUnit(_kmVehicleType).toUpperCase()} reading updated.`);
+    await Promise.all([loadVehicles(), loadDashboard(), loadNotifBadge()]);
+    if ($('V_upcoming').classList.contains('active')) await loadUpcoming();
+    if ($('V_vehicles').classList.contains('active')) await loadVehiclesView();
+    if (STATE.currentVehicleId) await openVehicleDetail(STATE.currentVehicleId);
   } catch (e) { showToast(e.message, 'error'); }
 }
 
@@ -774,10 +836,30 @@ function fillProfileForm() {
   $('pf_last').value  = u.last_name  || '';
   $('pf_email').value = u.email      || '';
   if ($('pf_phone')) $('pf_phone').value = u.phone || '';
-  if (u.warn_days)   $('pf_warn').value   = u.warn_days;
-  if (u.urgent_days) $('pf_urgent').value = u.urgent_days;
-  if (u.notify_email) $('pf_em_toggle').classList.add('on');
+  $('pf_em_toggle').classList.toggle('on', u.notify_email !== false);
   $('ps_vehicles').textContent = STATE.vehicles.length;
+  fillAlertSettings();
+}
+
+async function toggleProfileEmail(el) {
+  const next = !el.classList.contains('on');
+  el.classList.toggle('on', next);
+  try {
+    const data = await api.updateProfile({
+      first_name: $('pf_first').value.trim() || STATE.user.first_name,
+      last_name: $('pf_last').value.trim() || '',
+      notify_email: next,
+      warn_days: STATE.user.warn_days || 7,
+      urgent_days: 10,
+      warn_km: STATE.user.warn_km || 100,
+      ...getAlertSettings(),
+    });
+    STATE.user = data.user;
+    showToast(next ? 'Email alerts enabled.' : 'Email alerts disabled.');
+  } catch (e) {
+    el.classList.toggle('on', !next);
+    showToast(e.message || 'Failed to update email alerts.', 'error');
+  }
 }
 
 async function saveProfile() {
@@ -789,14 +871,96 @@ async function saveProfile() {
       notify_email:    $('pf_em_toggle').classList.contains('on'),
       notify_whatsapp: !!($('pf_phone')?.value.trim()),
       phone:           $('pf_phone')?.value.trim() || null,
-      warn_days:       parseInt($('pf_warn').value)   || 7,
-      urgent_days:     parseInt($('pf_urgent').value) || 3,
+      warn_days:       STATE.user.warn_days || 7,
+      urgent_days:     10,
+      warn_km:         STATE.user.warn_km || 100,
+      ...getAlertSettings(),
     });
-    STATE.user = data.user; hydrateUser(data.user); showToast('Profile saved.');
+    STATE.user = data.user; hydrateUser(data.user); fillAlertSettings(); showToast('Profile saved.');
   } catch (e) { showError('profileError', e.message); }
 }
 
-function saveAlertSettings() { showToast('Alert settings saved.'); }
+function toggleAlert(el) { el.classList.toggle('on'); }
+
+function getAlertSettings() {
+  return {
+    alert_warning:    $('alert_warning')?.classList.contains('on') ?? true,
+    alert_urgent:     $('alert_urgent')?.classList.contains('on') ?? true,
+    alert_overdue:    $('alert_overdue')?.classList.contains('on') ?? true,
+    alert_completion: $('alert_completion')?.classList.contains('on') ?? true,
+    alert_digest:     $('alert_digest')?.classList.contains('on') ?? false,
+    alert_odometer:   $('alert_odometer')?.classList.contains('on') ?? true,
+  };
+}
+
+function getWarnKmSetting() {
+  const preset = $('warnKmPreset')?.value || '100';
+  const custom = parseInt($('warnKmCustom')?.value, 10);
+  const km = preset === 'custom' ? custom : parseInt(preset, 10);
+  return Math.max(50, km || 100);
+}
+
+function getWarnDaysSetting() {
+  return Math.max(1, parseInt($('warnDays')?.value, 10) || 7);
+}
+
+function handleWarnKmPreset() {
+  const isCustom = $('warnKmPreset')?.value === 'custom';
+  if (!isCustom && $('warnKmCustom')) $('warnKmCustom').value = $('warnKmPreset').value;
+}
+
+function handleWarnKmManual() {
+  const manual = parseInt($('warnKmCustom')?.value, 10);
+  if (!manual) return;
+  const presetValue = String(manual);
+  if ($('warnKmPreset')) {
+    $('warnKmPreset').value = ['100', '250', '500'].includes(presetValue) ? presetValue : 'custom';
+  }
+}
+
+function fillAlertSettings() {
+  if (!STATE.user) return;
+  const u = STATE.user;
+  const warnKm = parseInt(u.warn_km, 10) || 100;
+  const preset = ['100', '250', '500'].includes(String(warnKm)) ? String(warnKm) : 'custom';
+  if ($('warnKmPreset')) $('warnKmPreset').value = preset;
+  if ($('warnKmCustom')) $('warnKmCustom').value = warnKm;
+  if ($('warnDays')) $('warnDays').value = u.warn_days || 7;
+  handleWarnKmPreset();
+
+  const settings = {
+    alert_warning: u.alert_warning !== false,
+    alert_urgent: u.alert_urgent !== false,
+    alert_overdue: u.alert_overdue !== false,
+    alert_completion: u.alert_completion !== false,
+    alert_digest: u.alert_digest === true,
+    alert_odometer: u.alert_odometer !== false,
+  };
+  Object.entries(settings).forEach(([id, on]) => {
+    const el = $(id);
+    if (el) el.classList.toggle('on', on);
+  });
+}
+
+async function saveAlertSettings() {
+  if (!STATE.user) return;
+  try {
+    const data = await api.updateProfile({
+      first_name: STATE.user.first_name,
+      last_name: STATE.user.last_name || '',
+      notify_email: STATE.user.notify_email !== false,
+      warn_days: getWarnDaysSetting(),
+      urgent_days: 10,
+      warn_km: getWarnKmSetting(),
+      ...getAlertSettings(),
+    });
+    STATE.user = data.user;
+    fillProfileForm();
+    showToast('Alert settings saved.');
+  } catch (e) {
+    showToast(e.message || 'Failed to save alert settings.', 'error');
+  }
+}
 
 // ── MODALS ────────────────────────────────────────────────────────────────
 function closeModal(id) { $(id).classList.remove('open'); hideError('logError'); }
@@ -811,9 +975,10 @@ function handleSearch(val) {
 
 // ── INIT ──────────────────────────────────────────────────────────────────
 (async () => {
+  localStorage.removeItem('rt_token');
   const token = api.getToken();
   if (token) {
     try { const d = await api.me(); STATE.user = d.user; await bootApp(); }
-    catch (e) { api.clearToken(); }
+    catch (e) { api.clearToken(); STATE.user = null; goPage('P_login'); }
   }
 })();

@@ -14,7 +14,10 @@ const auth = async (req, res, next) => {
 
     // Verify user still exists
     const { rows } = await query(
-      'SELECT id, email, first_name, last_name, phone, notify_whatsapp, notify_email FROM users WHERE id = $1',
+      `SELECT id, email, first_name, last_name, phone, notify_whatsapp, notify_email,
+              warn_days, urgent_days, alert_warning, alert_urgent, alert_overdue,
+              alert_completion, alert_digest, alert_odometer, warn_km
+       FROM users WHERE id = $1`,
       [decoded.userId]
     );
     if (!rows.length) {

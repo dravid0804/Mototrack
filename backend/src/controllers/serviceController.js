@@ -1,6 +1,7 @@
 // src/controllers/serviceController.js
 const { query }  = require('../config/database');
 const { notify } = require('../services/notificationService');
+const { runServiceAlerts } = require('../services/serviceAlertService');
 
 exports.list = async (req, res, next) => {
   try {
@@ -69,7 +70,6 @@ exports.create = async (req, res, next) => {
     }
 
     // Send completion notification
-    const user = { ...req.user, notify_whatsapp: true, notify_email: true };
     await notify({
       userId:      req.user.id,
       vehicleId:   vehicle_id,
@@ -78,17 +78,21 @@ exports.create = async (req, res, next) => {
       user:        { id: req.user.id, first_name: req.user.first_name,
                      email: req.user.email, phone: req.user.phone,
                      notify_whatsapp: req.user.notify_whatsapp,
-                     notify_email: req.user.notify_email },
+                      notify_email: req.user.notify_email,
+                     alert_completion: req.user.alert_completion },
       vehicle,
       templateData: {
         serviceName:  service_name,
         doneKm:       done_km,
         doneDate:     new Date(done_at || Date.now()).toDateString(),
         nextDueKm:    next_due_km,
+        unit:         vehicle.type === 'tractor' ? 'hrs' : 'km',
         spec:         spec_used,
         qty:          qty_used,
       },
     });
+
+    await runServiceAlerts({ vehicleId: vehicle_id });
 
     res.status(201).json({ success: true, record });
   } catch (err) { next(err); }
@@ -132,8 +136,8 @@ exports.upcoming = async (req, res, next) => {
           WHERE vehicle_id=$1 AND catalogue_id=sc.id
           ORDER BY done_km DESC, done_at DESC LIMIT 1
         ) sr ON TRUE
-        WHERE  (sc.vehicle_type = $2 OR sc.vehicle_type = 'both')
-          AND  (sc.fuel_type = 'any' OR sc.fuel_type = $3)
+        WHERE  (sc.vehicle_type = $2 OR sc.vehicle_type = 'all' OR (sc.vehicle_type = 'both' AND $2 IN ('car','bike')))
+          AND  (sc.fuel_type = 'any' OR sc.fuel_type = $3 OR (sc.fuel_type = 'ice' AND $3 IN ('petrol','diesel','cng','hybrid')))
       `, [vehicle.id, vehicle.type, vehicle.fuel_type]);
 
       const currentKm = vehicle.current_km;
@@ -141,14 +145,14 @@ exports.upcoming = async (req, res, next) => {
       for (const svc of services) {
         // Always recalculate — never trust stale next_due_km
         let nextDueKm = null;
-        if (svc.done_km && svc.interval_km) {
-          nextDueKm = parseInt(svc.done_km) + parseInt(svc.interval_km);
+        if (svc.interval_km) {
+          nextDueKm = (parseInt(svc.done_km, 10) || 0) + parseInt(svc.interval_km, 10);
         }
 
         let nextDueDate = null;
-        if (svc.done_at && svc.interval_months) {
-          const d = new Date(svc.done_at);
-          d.setMonth(d.getMonth() + parseInt(svc.interval_months));
+        if (svc.interval_months) {
+          const d = new Date(svc.done_at || vehicle.created_at || Date.now());
+          d.setMonth(d.getMonth() + parseInt(svc.interval_months, 10));
           nextDueDate = d;
         }
 
@@ -160,8 +164,10 @@ exports.upcoming = async (req, res, next) => {
           : null;
 
         // Use worst status between km and date
-        const kmStatus   = kmLeft   == null ? 'unknown' : kmLeft   < 0 ? 'overdue' : kmLeft   <= 300 ? 'urgent' : kmLeft   <= 800 ? 'warning' : 'ok';
-        const dateStatus = daysLeft == null ? 'unknown' : daysLeft < 0 ? 'overdue' : daysLeft <= 3   ? 'urgent' : daysLeft <= 7   ? 'warning' : 'ok';
+        const warnKm = parseInt(req.user.warn_km, 10) || 100;
+        const warnDays = parseInt(req.user.warn_days, 10) || 7;
+        const kmStatus   = kmLeft   == null ? 'unknown' : kmLeft   < 0 ? 'overdue' : kmLeft   <= 50 ? 'urgent' : kmLeft   <= warnKm ? 'warning' : 'ok';
+        const dateStatus = daysLeft == null ? 'unknown' : daysLeft < 0 ? 'overdue' : daysLeft <= 10 ? 'urgent' : daysLeft <= warnDays ? 'warning' : 'ok';
         const order = { overdue: 0, urgent: 1, warning: 2, ok: 3, unknown: 4 };
         const status = order[kmStatus] <= order[dateStatus] ? kmStatus : dateStatus;
 
@@ -170,8 +176,10 @@ exports.upcoming = async (req, res, next) => {
         results.push({
           vehicleId:    vehicle.id,
           vehicleName:  `${vehicle.make} ${vehicle.model}`,
+          vehicleType:  vehicle.type,
           registration: vehicle.registration,
           currentKm,
+          unit:         vehicle.type === 'tractor' ? 'hrs' : 'km',
           ...svc,
           nextDueKm,
           nextDueDate:  nextDueDate ? nextDueDate.toISOString().split('T')[0] : null,

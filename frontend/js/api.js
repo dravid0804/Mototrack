@@ -4,9 +4,15 @@ const API_BASE = window.location.origin + '/api';
 
 const api = {
   // ── Token management ──────────────────────────────────────────────────
-  getToken: () => localStorage.getItem('rt_token'),
-  setToken: (t) => localStorage.setItem('rt_token', t),
-  clearToken: () => localStorage.removeItem('rt_token'),
+  getToken: () => sessionStorage.getItem('rt_token'),
+  setToken: (t) => {
+    sessionStorage.setItem('rt_token', t);
+    localStorage.removeItem('rt_token');
+  },
+  clearToken: () => {
+    sessionStorage.removeItem('rt_token');
+    localStorage.removeItem('rt_token');
+  },
 
   // ── Core fetch wrapper ────────────────────────────────────────────────
   async req(method, path, body = null) {

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { query } = require("../config/database");
@@ -33,9 +34,13 @@ exports.register = async (req, res, next) => {
 
     const { rows } = await query(
       `INSERT INTO users 
-      (first_name, last_name, email, password_hash, notify_whatsapp, notify_email)
-      VALUES ($1,$2,$3,$4,false,$5)
-      RETURNING id, first_name, last_name, email, notify_whatsapp, notify_email, created_at`,
+      (first_name, last_name, email, password_hash, notify_whatsapp, notify_email,
+       alert_warning, alert_urgent, alert_overdue, alert_completion, alert_digest,
+       alert_odometer, warn_km)
+      VALUES ($1,$2,$3,$4,false,$5,true,true,true,true,false,true,100)
+      RETURNING id, first_name, last_name, email, notify_whatsapp, notify_email,
+       warn_days, urgent_days, alert_warning, alert_urgent, alert_overdue,
+       alert_completion, alert_digest, alert_odometer, warn_km, created_at`,
       [
         first_name,
         last_name || "",
@@ -84,7 +89,9 @@ exports.login = async (req, res, next) => {
 
     const { rows } = await query(
       `SELECT id, first_name, last_name, email, password_hash,
-       notify_whatsapp, notify_email, warn_days, urgent_days
+       notify_whatsapp, notify_email, warn_days, urgent_days,
+       alert_warning, alert_urgent, alert_overdue, alert_completion, alert_digest,
+       alert_odometer, warn_km
        FROM users WHERE email=$1`,
       [email.toLowerCase()]
     );
@@ -123,23 +130,38 @@ exports.me = async (req, res) => {
 /* ───────── UPDATE PROFILE ───────── */
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { first_name, last_name, notify_email, warn_days, urgent_days } =
-      req.body;
+    const {
+      first_name, last_name, notify_email, warn_days, urgent_days,
+      alert_warning, alert_urgent, alert_overdue, alert_completion, alert_digest,
+      alert_odometer, warn_km,
+    } = req.body;
 
     const { rows } = await query(
       `UPDATE users 
        SET first_name=$1, last_name=$2,
        notify_whatsapp=false, notify_email=$3,
-       warn_days=$4, urgent_days=$5
-       WHERE id=$6
+       warn_days=$4, urgent_days=$5,
+       alert_warning=$6, alert_urgent=$7, alert_overdue=$8,
+       alert_completion=$9, alert_digest=$10,
+       alert_odometer=$11, warn_km=$12
+       WHERE id=$13
        RETURNING id, first_name, last_name, email,
-       notify_whatsapp, notify_email, warn_days, urgent_days`,
+       notify_whatsapp, notify_email, warn_days, urgent_days,
+       alert_warning, alert_urgent, alert_overdue, alert_completion, alert_digest,
+       alert_odometer, warn_km`,
       [
         first_name,
         last_name || "",
         notify_email !== false,
         warn_days || 7,
-        urgent_days || 3,
+        urgent_days || 10,
+        alert_warning !== false,
+        alert_urgent !== false,
+        alert_overdue !== false,
+        alert_completion !== false,
+        alert_digest === true,
+        alert_odometer !== false,
+        parseInt(warn_km, 10) || 100,
         req.user.id,
       ]
     );

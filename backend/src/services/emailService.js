@@ -9,18 +9,21 @@ const getTransporter = () => {
     transporter = nodemailer.createTransport({
       host:   process.env.SMTP_HOST,
       port:   parseInt(process.env.SMTP_PORT) || 587,
-      secure: false,
+      secure: String(process.env.SMTP_SECURE).toLowerCase() === 'true',
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
       tls: {
-        rejectUnauthorized: false,
+        rejectUnauthorized: String(process.env.SMTP_TLS_REJECT_UNAUTHORIZED).toLowerCase() === 'true',
       },
     });
   }
   return transporter;
 };
+
+const readingUnit = (d) => d.unit || 'km';
+const fmtReading = (value, d) => `${Number(value || 0).toLocaleString()} ${readingUnit(d)}`;
 
 // ── HTML base template ────────────────────────────────────────────────────
 
@@ -44,7 +47,7 @@ const baseHtml = (title, accentColor, bodyContent) => `
           <td style="padding:28px 36px 20px;border-bottom:1px solid #1A1E2A;">
             <table width="100%"><tr>
               <td>
-                <span style="font-size:22px;font-weight:800;color:${accentColor};letter-spacing:-0.5px;">⚙ RevTrack</span>
+                <span style="font-size:22px;font-weight:800;color:${accentColor};letter-spacing:-0.5px;">⚙ MotoTrack</span>
               </td>
               <td align="right">
                 <span style="font-size:12px;color:#4A5270;letter-spacing:1px;text-transform:uppercase;">Vehicle Service Manager</span>
@@ -58,7 +61,7 @@ const baseHtml = (title, accentColor, bodyContent) => `
         <tr>
           <td style="padding:20px 36px;border-top:1px solid #1A1E2A;background:#08090D;">
             <p style="margin:0;font-size:11px;color:#4A5270;text-align:center;">
-              You're receiving this because you enabled email alerts in RevTrack.<br>
+              You're receiving this because you enabled email alerts in MotoTrack.<br>
               <a href="#" style="color:#FF5C1A;text-decoration:none;">Manage notifications</a> &nbsp;·&nbsp;
               <a href="#" style="color:#FF5C1A;text-decoration:none;">Unsubscribe</a>
             </p>
@@ -95,7 +98,7 @@ const emailBodies = {
        <tr><td style="padding:10px 0;color:#8892B0;font-size:13px;">Quantity needed</td>
            <td style="padding:10px 0;color:#ECEEFF;font-size:13px;text-align:right;">${d.qty || '—'}</td></tr>
      </table>
-     <a href="https://revtrack.app" style="display:inline-block;background:#FF5C1A;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">View in RevTrack →</a>`
+     <a href="https://Mototrack.app" style="display:inline-block;background:#FF5C1A;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">View in MotoTrack →</a>`
   ),
 
   overdue: (d) => baseHtml(
@@ -115,7 +118,7 @@ const emailBodies = {
            <td style="padding:8px 0;color:#ECEEFF;font-size:13px;text-align:right;">${d.qty || '—'}</td></tr>
      </table>
      <p style="font-size:13px;color:#8892B0;margin-bottom:20px;">⚠️ ${d.description || 'Delaying this service risks serious mechanical damage.'}</p>
-     <a href="https://revtrack.app" style="display:inline-block;background:#E53935;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">Book Service Now →</a>`
+     <a href="https://Mototrack.app" style="display:inline-block;background:#E53935;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">Book Service Now →</a>`
   ),
 
   completion: (d) => baseHtml(
@@ -129,11 +132,11 @@ const emailBodies = {
        <tr><td style="padding:10px 0;color:#8892B0;font-size:13px;border-bottom:1px solid #1A1E2A;">Service done</td>
            <td style="padding:10px 0;color:#1DB954;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid #1A1E2A;">${d.serviceName}</td></tr>
        <tr><td style="padding:10px 0;color:#8892B0;font-size:13px;border-bottom:1px solid #1A1E2A;">Done at</td>
-           <td style="padding:10px 0;color:#ECEEFF;font-size:13px;text-align:right;border-bottom:1px solid #1A1E2A;">${d.doneKm.toLocaleString()} km · ${d.doneDate}</td></tr>
+           <td style="padding:10px 0;color:#ECEEFF;font-size:13px;text-align:right;border-bottom:1px solid #1A1E2A;">${fmtReading(d.doneKm, d)} · ${d.doneDate}</td></tr>
        ${d.nextDueKm ? `<tr><td style="padding:10px 0;color:#8892B0;font-size:13px;">Next due</td>
-           <td style="padding:10px 0;color:#4A9EFF;font-size:13px;font-weight:600;text-align:right;">${d.nextDueKm.toLocaleString()} km</td></tr>` : ''}
+            <td style="padding:10px 0;color:#4A9EFF;font-size:13px;font-weight:600;text-align:right;">${fmtReading(d.nextDueKm, d)}</td></tr>` : ''}
      </table>
-     <a href="https://revtrack.app" style="display:inline-block;background:#1DB954;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">View Service Log →</a>`
+     <a href="https://Mototrack.app" style="display:inline-block;background:#1DB954;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">View Service Log →</a>`
   ),
 
   digest: (d) => baseHtml(
@@ -158,20 +161,89 @@ const emailBodies = {
      ${d.overdueItems && d.overdueItems.length ? `
      <div style="background:#141720;border-radius:12px;padding:20px;margin-bottom:24px;">
        <p style="margin:0 0 12px;font-size:14px;font-weight:600;color:#E53935;">🔴 Overdue Services</p>
-       ${d.overdueItems.map(it => `<p style="margin:0 0 8px;font-size:13px;color:#8892B0;">• <strong style="color:#ECEEFF">${it.vehicle}</strong> — ${it.service} (${it.overdueKm} km overdue)</p>`).join('')}
+       ${d.overdueItems.map(it => `<p style="margin:0 0 8px;font-size:13px;color:#8892B0;">• <strong style="color:#ECEEFF">${it.vehicle}</strong> — ${it.service} (${it.overdueKm} ${it.unit || 'km'} overdue)</p>`).join('')}
      </div>` : ''}
-     <a href="https://revtrack.app" style="display:inline-block;background:#FF5C1A;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">View Full Report →</a>`
+     <a href="https://Mototrack.app" style="display:inline-block;background:#FF5C1A;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;">View Full Report →</a>`
   ),
 };
+
+emailBodies.urgent = (d) => baseHtml(
+  `Urgent Service Reminder - ${d.serviceName}`,
+  '#E85D1A',
+  `<h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#ECEEFF;">Urgent service reminder</h1>
+   <p style="margin:0 0 20px;font-size:14px;color:#8892B0;">Hi ${d.firstName}, ${d.serviceName} for ${d.vehicleName} is coming due very soon.</p>
+   <table width="100%" style="background:#141720;border-radius:12px;padding:20px;margin-bottom:20px;" cellpadding="0" cellspacing="0">
+     <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Vehicle</td><td style="padding:8px 0;color:#ECEEFF;font-size:13px;text-align:right;">${d.vehicleName} (${d.registration})</td></tr>
+      <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Current reading</td><td style="padding:8px 0;color:#ECEEFF;font-size:13px;text-align:right;">${fmtReading(d.currentKm, d)}</td></tr>
+      <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Due at</td><td style="padding:8px 0;color:#E85D1A;font-size:13px;font-weight:700;text-align:right;">${d.nextDueKm ? fmtReading(d.nextDueKm, d) : d.nextDueDate || 'N/A'}</td></tr>
+      <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Time left</td><td style="padding:8px 0;color:#E85D1A;font-size:13px;font-weight:700;text-align:right;">${d.daysLeft > 0 ? d.daysLeft + ' day(s)' : 'Due now'}${d.kmLeft > 0 ? ' / ' + fmtReading(d.kmLeft, d) : ''}</td></tr>
+     <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Spec / quantity</td><td style="padding:8px 0;color:#ECEEFF;font-size:13px;text-align:right;">${d.spec || 'As per manufacturer'} ${d.qty ? '- ' + d.qty : ''}</td></tr>
+   </table>
+   <p style="font-size:13px;color:#8892B0;margin:0;">Please plan this service before the due limit to avoid wear or breakdowns.</p>`
+);
+
+emailBodies.welcome = (d) => baseHtml(
+  'Welcome to MotoTrack',
+  '#E85D1A',
+  `<h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#ECEEFF;">Welcome to MotoTrack</h1>
+   <p style="margin:0;font-size:14px;color:#8892B0;">Hi ${d.firstName}, your account is ready. Add your vehicle and MotoTrack will remind you before important services are due.</p>`
+);
+
+emailBodies.warning = (d) => baseHtml(
+  `Service Due Soon - ${d.serviceName}`,
+  '#F0A500',
+  `<h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#ECEEFF;">Service due soon</h1>
+   <p style="margin:0 0 20px;font-size:14px;color:#8892B0;">Hi ${d.firstName}, this is a reminder that one service is coming up.</p>
+   <table width="100%" style="background:#141720;border-radius:12px;padding:20px;margin-bottom:20px;" cellpadding="0" cellspacing="0">
+     <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Vehicle</td><td style="padding:8px 0;color:#ECEEFF;font-size:13px;text-align:right;">${d.vehicleName} (${d.registration})</td></tr>
+     <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Service</td><td style="padding:8px 0;color:#ECEEFF;font-size:13px;text-align:right;">${d.serviceName}</td></tr>
+      <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Current reading</td><td style="padding:8px 0;color:#ECEEFF;font-size:13px;text-align:right;">${fmtReading(d.currentKm, d)}</td></tr>
+      <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Due at</td><td style="padding:8px 0;color:#F0A500;font-size:13px;font-weight:700;text-align:right;">${d.nextDueKm ? fmtReading(d.nextDueKm, d) : d.nextDueDate || 'N/A'}</td></tr>
+      <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Remaining</td><td style="padding:8px 0;color:#F0A500;font-size:13px;font-weight:700;text-align:right;">${d.daysLeft > 0 ? d.daysLeft + ' day(s)' : 'Due now'}${d.kmLeft > 0 ? ' / ' + fmtReading(d.kmLeft, d) : ''}</td></tr>
+     <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Spec / quantity</td><td style="padding:8px 0;color:#ECEEFF;font-size:13px;text-align:right;">${d.spec || 'As per manufacturer'} ${d.qty ? '- ' + d.qty : ''}</td></tr>
+   </table>
+   <p style="font-size:13px;color:#8892B0;margin:0;">Please schedule this service before the due limit.</p>`
+);
+
+emailBodies.overdue = (d) => baseHtml(
+  `Service Overdue - ${d.serviceName}`,
+  '#E53935',
+  `<h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#ECEEFF;">Service overdue</h1>
+   <p style="margin:0 0 20px;font-size:14px;color:#8892B0;">Hi ${d.firstName}, this service has passed its due limit and needs attention.</p>
+   <table width="100%" style="background:#141720;border-radius:12px;padding:20px;margin-bottom:20px;" cellpadding="0" cellspacing="0">
+     <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Vehicle</td><td style="padding:8px 0;color:#ECEEFF;font-size:13px;text-align:right;">${d.vehicleName} (${d.registration})</td></tr>
+     <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Service</td><td style="padding:8px 0;color:#ECEEFF;font-size:13px;text-align:right;">${d.serviceName}</td></tr>
+      <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Current reading</td><td style="padding:8px 0;color:#ECEEFF;font-size:13px;text-align:right;">${fmtReading(d.currentKm, d)}</td></tr>
+      <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Was due at</td><td style="padding:8px 0;color:#E53935;font-size:13px;font-weight:700;text-align:right;">${d.nextDueKm ? fmtReading(d.nextDueKm, d) : d.nextDueDate || 'N/A'}</td></tr>
+      <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Overdue by</td><td style="padding:8px 0;color:#E53935;font-size:13px;font-weight:700;text-align:right;">${d.kmLeft < 0 ? fmtReading(Math.abs(d.kmLeft), d) : Math.abs(d.daysLeft || 0) + ' day(s)'}</td></tr>
+     <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Spec / quantity</td><td style="padding:8px 0;color:#ECEEFF;font-size:13px;text-align:right;">${d.spec || 'As per manufacturer'} ${d.qty ? '- ' + d.qty : ''}</td></tr>
+   </table>
+   <p style="font-size:13px;color:#8892B0;margin:0;">Please complete this service as soon as possible to reduce wear and breakdown risk.</p>`
+);
+
+emailBodies.odometer = (d) => baseHtml(
+  `Update Odometer - ${d.vehicleName}`,
+  '#2563EB',
+  `<h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#ECEEFF;">Update your odometer reading</h1>
+   <p style="margin:0 0 20px;font-size:14px;color:#8892B0;">Hi ${d.firstName}, please update the current ${readingUnit(d)} reading for ${d.vehicleName}. This helps MotoTrack calculate service due reminders accurately.</p>
+   <table width="100%" style="background:#141720;border-radius:12px;padding:20px;margin-bottom:20px;" cellpadding="0" cellspacing="0">
+     <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Vehicle</td><td style="padding:8px 0;color:#ECEEFF;font-size:13px;text-align:right;">${d.vehicleName} (${d.registration})</td></tr>
+     <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Last saved reading</td><td style="padding:8px 0;color:#2563EB;font-size:13px;font-weight:700;text-align:right;">${fmtReading(d.currentKm, d)}</td></tr>
+   </table>
+   <a href="${d.updateUrl}" style="display:inline-block;background:#2563EB;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:14px;">Update odometer</a>
+   <p style="font-size:12px;color:#8892B0;margin:16px 0 0;">You will receive this reminder every week until the reading is kept up to date.</p>`
+);
 
 // ── Subject lines ─────────────────────────────────────────────────────────
 
 const subjects = {
-  warning:    (d) => `⚠️ Service due in ${d.daysLeft} days — ${d.vehicleName}`,
-  urgent:     (d) => `🚨 URGENT: ${d.serviceName} due in ${d.daysLeft} days — ${d.vehicleName}`,
+  warning:    (d) => `${d.serviceName} due soon - ${d.vehicleName}`,
+  urgent:     (d) => `URGENT: ${d.serviceName} due soon - ${d.vehicleName}`,
   overdue:    (d) => `🔴 OVERDUE: ${d.serviceName} — ${d.vehicleName} needs service NOW`,
   completion: (d) => `✅ Service logged — ${d.serviceName} on ${d.vehicleName}`,
-  digest:     (d) => `📊 Your ${d.month} vehicle health report — RevTrack`,
+  digest:     (d) => `📊 Your ${d.month} vehicle health report — MotoTrack`,
+  welcome:    () => 'Welcome to MotoTrack',
+  odometer:   (d) => `Update ${readingUnit(d)} reading - ${d.vehicleName}`,
 };
 
 // ── Core send function ────────────────────────────────────────────────────
@@ -186,24 +258,26 @@ async function sendEmail({ userId, vehicleId, serviceName, type, bracket, email,
   );
 
   const htmlBody = emailBodies[type] ? emailBodies[type](templateData) : `<p>${templateData.message || ''}</p>`;
-  const subject  = subjects[type]    ? subjects[type](templateData)    : `RevTrack — ${type}`;
+  const subject  = subjects[type]    ? subjects[type](templateData)    : `MotoTrack — ${type}`;
 
   try {
+    const fromAddress = process.env.EMAIL_FROM || process.env.SMTP_USER;
     const info = await getTransporter().sendMail({
-      from:    `"${process.env.EMAIL_FROM_NAME || 'RevTrack'}" <${process.env.EMAIL_FROM}>`,
+      from:    `"${process.env.EMAIL_FROM_NAME || 'MotoTrack'}" <${fromAddress}>`,
       to:      email,
       subject,
       html:    htmlBody,
     });
 
-    // Store bracket in error_detail so scheduler can deduplicate overdue per 200km
+    // Store bracket in error_detail so scheduler can deduplicate overdue reminders per threshold.
     await query(
       `UPDATE notification_log SET status='sent', message_id=$1, sent_at=NOW(), error_detail=$2 WHERE id=$3`,
       [info.messageId, bracket || null, log.id]
     );
 
     logger.info(`Email sent [${type}] → ${email}`);
-    return { success: true, messageId: info.messageId };
+    logger.info(`SMTP response [${type}] -> ${email} | accepted=${(info.accepted || []).join(',') || 'none'} | rejected=${(info.rejected || []).join(',') || 'none'} | response=${info.response || 'n/a'}`);
+    return { success: true, messageId: info.messageId, accepted: info.accepted, rejected: info.rejected, response: info.response };
 
   } catch (err) {
     await query(

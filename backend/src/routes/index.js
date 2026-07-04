@@ -29,7 +29,7 @@ router.patch('/auth/profile', auth, authCtrl.updateProfile);
 // ── Vehicles ──────────────────────────────────────────────────────────────
 router.get   ('/vehicles',            auth, vehicleCtrl.list);
 router.post  ('/vehicles', [
-  body('type').isIn(['car','bike']),
+  body('type').isIn(['car','bike','tractor']),
   body('make').notEmpty(),
   body('model').notEmpty(),
   body('year').isInt({ min: 1980, max: 2030 }),
@@ -64,8 +64,14 @@ router.get('/catalogue', auth, async (req, res, next) => {
     const { query: dbQuery } = require('../config/database');
     let sql = 'SELECT * FROM service_catalogue WHERE 1=1';
     const params = [];
-    if (type)      { sql += ` AND (vehicle_type=$${params.length+1} OR vehicle_type='both')`; params.push(type); }
-    if (fuel_type) { sql += ` AND (fuel_type=$${params.length+1} OR fuel_type='any')`; params.push(fuel_type); }
+    if (type) {
+      sql += ` AND (vehicle_type=$${params.length+1} OR vehicle_type='all' OR (vehicle_type='both' AND $${params.length+1} IN ('car','bike')))`;
+      params.push(type);
+    }
+    if (fuel_type) {
+      sql += ` AND (fuel_type=$${params.length+1} OR fuel_type='any' OR (fuel_type='ice' AND $${params.length+1} IN ('petrol','diesel','cng','hybrid')))`;
+      params.push(fuel_type);
+    }
     sql += ' ORDER BY priority, service_name';
     const { rows } = await dbQuery(sql, params);
     res.json({ success: true, catalogue: rows });
