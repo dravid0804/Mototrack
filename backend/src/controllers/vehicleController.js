@@ -85,7 +85,9 @@ exports.update = async (req, res, next) => {
     );
     if (!vehicle) return res.status(404).json({ success: false, message: 'Vehicle not found' });
     if (current_km !== undefined) {
-      await runServiceAlerts({ vehicleId: vehicle.id });
+      runServiceAlerts({
+        vehicleId: vehicle.id
+    }).catch(console.error);
     }
     res.json({ success: true, vehicle });
   } catch (err) { next(err); }

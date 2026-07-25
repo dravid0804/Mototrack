@@ -24,7 +24,23 @@ async function notify({ userId, vehicleId, serviceName, type, bracket, user, veh
   // ── Email ─────────────────────────────────────────────────────────────────
   if (user.notify_email && user.email && (!alertSwitch || user[alertSwitch] !== false)) {
     try {
-      const result = await sendEmail({ userId, vehicleId, serviceName, type, bracket, email: user.email, templateData: enriched });
+      sendEmail({
+        userId,
+        vehicleId,
+        serviceName,
+        type,
+        bracket,
+        email: user.email,
+        templateData: enriched
+    })
+    .then(result => {
+        if (!result?.success) {
+            logger.error(`Email failed [${type}]: ${result?.error || 'Unknown error'}`);
+        }
+    })
+    .catch(err => {
+        logger.error(`Email failed [${type}]: ${err.message}`);
+    });
       if (!result?.success) logger.error(`Email failed [${type}]: ${result?.error || 'Unknown error'}`);
     } catch (err) {
       logger.error(`Email failed [${type}]: ${err.message}`);

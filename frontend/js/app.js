@@ -802,15 +802,36 @@ function openKmModal(id, name, cur, type = 'car') {
   $('MODAL_KM').classList.add('open');
 }
 async function saveKm() {
-  const km = parseInt($('km_value').value); if (!km || km < 0) return;
+  const km = parseInt($('km_value').value);
+  if (!km || km < 0) return;
+
   try {
-    await api.updateVehicle(_kmVehicleId, { current_km: km });
-    closeModal('MODAL_KM'); showToast(`${readingUnit(_kmVehicleType).toUpperCase()} reading updated.`);
-    await Promise.all([loadVehicles(), loadDashboard(), loadNotifBadge()]);
-    if ($('V_upcoming').classList.contains('active')) await loadUpcoming();
-    if ($('V_vehicles').classList.contains('active')) await loadVehiclesView();
-    if (STATE.currentVehicleId) await openVehicleDetail(STATE.currentVehicleId);
-  } catch (e) { showToast(e.message, 'error'); }
+      await api.updateVehicle(_kmVehicleId, {
+          current_km: km
+      });
+
+      closeModal('MODAL_KM');
+      showToast(`${readingUnit(_kmVehicleType).toUpperCase()} reading updated.`);
+
+      // Update vehicles once
+      await loadVehicles();
+
+      // Everything else runs in background
+      loadDashboard();
+      loadNotifBadge();
+
+      if ($('V_upcoming').classList.contains('active'))
+          loadUpcoming();
+
+      if ($('V_vehicles').classList.contains('active'))
+          loadVehiclesView();
+
+      if (STATE.currentVehicleId)
+          openVehicleDetail(STATE.currentVehicleId);
+
+  } catch (e) {
+      showToast(e.message, 'error');
+  }
 }
 
 // ── RESYNC VEHICLE ────────────────────────────────────────────────────────

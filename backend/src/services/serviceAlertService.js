@@ -64,86 +64,158 @@ async function runVehicleServiceAlerts(vehicle, options = {}) {
   const urgentKm = 50;
   const currentKm = parseInt(vehicle.current_km, 10) || 0;
   const unit = vehicle.type === 'tractor' ? 'hrs' : 'km';
+  const monthName = today.toLocaleString('default', { month: 'long', year: 'numeric' });
+
   let sentCount = 0;
 
-  const { rows: services } = await query(`
-    SELECT sc.id AS catalogue_id, sc.service_name, sc.priority, sc.description,
-           COALESCE(vsc.custom_interval_km,     sc.interval_km)     AS eff_interval_km,
-           COALESCE(vsc.custom_interval_months, sc.interval_months) AS eff_interval_months,
-           COALESCE(vsc.custom_spec,            sc.default_spec)    AS eff_spec,
-           COALESCE(vsc.custom_qty,             sc.default_qty)     AS eff_qty,
-           sr.done_at, sr.done_km
-    FROM   service_catalogue sc
-    LEFT   JOIN vehicle_service_config vsc
+  const [{ rows: services }, { rows: sentLogs }] = await Promise.all([
+    query(`
+      SELECT sc.id AS catalogue_id, sc.service_name, sc.priority, sc.description,
+             COALESCE(vsc.custom_interval_km,     sc.interval_km)     AS eff_interval_km,
+             COALESCE(vsc.custom_interval_months, sc.interval_months) AS eff_interval_months,
+             COALESCE(vsc.custom_spec,            sc.default_spec)    AS eff_spec,
+             COALESCE(vsc.custom_qty,             sc.default_qty)     AS eff_qty,
+             sr.done_at, sr.done_km
+      FROM service_catalogue sc
+      LEFT JOIN vehicle_service_config vsc
              ON vsc.vehicle_id=$1 AND vsc.catalogue_id=sc.id
-    LEFT   JOIN LATERAL (
-      SELECT done_at, done_km FROM service_records
-      WHERE  vehicle_id=$1 AND catalogue_id=sc.id
-      ORDER  BY done_km DESC, done_at DESC LIMIT 1
-    ) sr ON TRUE
-    WHERE  (sc.vehicle_type=$2 OR sc.vehicle_type='all' OR (sc.vehicle_type='both' AND $2 IN ('car','bike')))
-      AND  (sc.fuel_type='any' OR sc.fuel_type=$3 OR (sc.fuel_type='ice' AND $3 IN ('petrol','diesel','cng','hybrid')))
-  `, [vehicle.id, vehicle.type, vehicle.fuel_type]);
+      LEFT JOIN LATERAL (
+        SELECT done_at, done_km
+        FROM service_records
+        WHERE vehicle_id=$1 AND catalogue_id=sc.id
+        ORDER BY done_km DESC, done_at DESC
+        LIMIT 1
+      ) sr ON TRUE
+      WHERE (sc.vehicle_type=$2 OR sc.vehicle_type='all' OR (sc.vehicle_type='both' AND $2 IN ('car','bike')))
+        AND (sc.fuel_type='any' OR sc.fuel_type=$3 OR (sc.fuel_type='ice' AND $3 IN ('petrol','diesel','cng','hybrid')))
+    `, [vehicle.id, vehicle.type, vehicle.fuel_type]),
+
+    query(`
+      SELECT service_name,
+             type,
+             error_detail,
+             sent_at
+      FROM notification_log
+      WHERE vehicle_id=$1
+        AND status='sent'
+    `, [vehicle.id])
+  ]);
+
+  const sentMap = new Map();
+
+  for (const log of sentLogs) {
+    const key = `${log.service_name}|${log.type}|${log.error_detail || ''}`;
+    sentMap.set(key, true);
+
+    if (log.type === 'overdue') {
+      const todayKey =
+        `${log.service_name}|overdue|today|${new Date(log.sent_at).toDateString()}`;
+      sentMap.set(todayKey, true);
+    }
+  }
+
+  const todayString = today.toDateString();
 
   for (const svc of services) {
+
     let nextDueKm = null;
     let nextDueDate = null;
 
     if (svc.eff_interval_km) {
-      nextDueKm = (parseInt(svc.done_km, 10) || 0) + parseInt(svc.eff_interval_km, 10);
+      nextDueKm =
+        (parseInt(svc.done_km, 10) || 0) +
+        parseInt(svc.eff_interval_km, 10);
     }
+
     if (svc.eff_interval_months) {
       const d = new Date(svc.done_at || vehicle.created_at || Date.now());
       d.setMonth(d.getMonth() + parseInt(svc.eff_interval_months, 10));
       nextDueDate = d;
     }
 
-    if (!nextDueKm && !nextDueDate) continue;
+    if (!nextDueKm && !nextDueDate)
+      continue;
 
-    const kmLeft = nextDueKm != null ? nextDueKm - currentKm : null;
-    const daysLeft = nextDueDate != null ? daysBetween(nextDueDate, today) : null;
-    const kmStatus = kmLeft == null ? 'ok' : kmLeft < 0 ? 'overdue' : kmLeft <= urgentKm ? 'urgent' : kmLeft <= warnKm ? 'warning' : 'ok';
-    const dateStatus = daysLeft == null ? 'ok' : daysLeft < 0 ? 'overdue' : daysLeft <= urgentDays ? 'urgent' : daysLeft <= warnDays ? 'warning' : 'ok';
-    const order = { overdue: 0, urgent: 1, warning: 2, ok: 3 };
-    const type = order[kmStatus] <= order[dateStatus] ? kmStatus : dateStatus;
-    const triggerSource = kmStatus === type && dateStatus === type
-      ? 'km-days'
-      : kmStatus === type ? 'km' : 'days';
+    const kmLeft =
+      nextDueKm != null
+        ? nextDueKm - currentKm
+        : null;
 
-    if (type === 'ok') continue;
+    const daysLeft =
+      nextDueDate != null
+        ? daysBetween(nextDueDate, today)
+        : null;
 
-    const marker = markerFor(type, triggerSource, kmLeft, warnKm, warnDays, nextDueKm, nextDueDate);
+    const kmStatus =
+      kmLeft == null
+        ? 'ok'
+        : kmLeft < 0
+        ? 'overdue'
+        : kmLeft <= urgentKm
+        ? 'urgent'
+        : kmLeft <= warnKm
+        ? 'warning'
+        : 'ok';
+
+    const dateStatus =
+      daysLeft == null
+        ? 'ok'
+        : daysLeft < 0
+        ? 'overdue'
+        : daysLeft <= urgentDays
+        ? 'urgent'
+        : daysLeft <= warnDays
+        ? 'warning'
+        : 'ok';
+
+    const order = {
+      overdue: 0,
+      urgent: 1,
+      warning: 2,
+      ok: 3
+    };
+
+    const type =
+      order[kmStatus] <= order[dateStatus]
+        ? kmStatus
+        : dateStatus;
+
+    if (type === 'ok')
+      continue;
+
+    const triggerSource =
+      kmStatus === type && dateStatus === type
+        ? 'km-days'
+        : kmStatus === type
+        ? 'km'
+        : 'days';
+
+    const marker = markerFor(
+      type,
+      triggerSource,
+      kmLeft,
+      warnKm,
+      warnDays,
+      nextDueKm,
+      nextDueDate
+    );
+
     if (type === 'overdue') {
-      const { rows: sentToday } = await query(`
-        SELECT id FROM notification_log
-        WHERE  vehicle_id = $1
-          AND  service_name = $2
-          AND  type = 'overdue'
-          AND  status = 'sent'
-          AND  sent_at >= CURRENT_DATE
-        LIMIT 1
-      `, [vehicle.id, svc.service_name]);
-      const { rows: sentMarker } = await query(`
-        SELECT id FROM notification_log
-        WHERE  vehicle_id = $1
-          AND  service_name = $2
-          AND  type = 'overdue'
-          AND  status = 'sent'
-          AND  CAST(error_detail AS TEXT) = $3
-        LIMIT 1
-      `, [vehicle.id, svc.service_name, marker]);
-      if (sentToday.length || sentMarker.length) continue;
+
+      if (
+        sentMap.has(`${svc.service_name}|overdue|today|${todayString}`) ||
+        sentMap.has(`${svc.service_name}|overdue|${marker}`)
+      ) {
+        continue;
+      }
+
     } else {
-      const { rows: sent } = await query(`
-        SELECT id FROM notification_log
-        WHERE  vehicle_id = $1
-          AND  service_name = $2
-          AND  type = $3
-          AND  status = 'sent'
-          AND  CAST(error_detail AS TEXT) = $4
-        LIMIT 1
-      `, [vehicle.id, svc.service_name, type, marker]);
-      if (sent.length) continue;
+
+      if (
+        sentMap.has(`${svc.service_name}|${type}|${marker}`)
+      ) {
+        continue;
+      }
     }
 
     await notify({
@@ -166,12 +238,15 @@ async function runVehicleServiceAlerts(vehicle, options = {}) {
         qty: svc.eff_qty,
         description: svc.description,
         priority: svc.priority,
-        month: today.toLocaleString('default', { month: 'long', year: 'numeric' }),
-      },
+        month: monthName
+      }
     });
 
-    sentCount += 1;
-    logger.info(`[${type.toUpperCase()}] ${vehicle.make} ${vehicle.model} - ${svc.service_name} | kmLeft: ${kmLeft} | daysLeft: ${daysLeft}`);
+    sentCount++;
+
+    logger.info(
+      `[${type.toUpperCase()}] ${vehicle.make} ${vehicle.model} - ${svc.service_name}`
+    );
   }
 
   return sentCount;
