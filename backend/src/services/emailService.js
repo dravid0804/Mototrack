@@ -8,7 +8,7 @@ const getTransporter = () => {
   if (!transporter) {
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 587,
+      port: parseInt(process.env.SMTP_PORT) || 465,
       secure: String(process.env.SMTP_SECURE).toLowerCase() === 'true',
     
       auth: {
