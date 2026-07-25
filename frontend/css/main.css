@@ -545,4 +545,125 @@ html,body{height:100%;font-family:var(--font-body);background:var(--bg);color:va
   color:var(--text);font-family:var(--font-body);
   outline:none;text-align:right;
 }
-.ied-input:focus{box-shadow:0 0 0 2px var(--accent-dim);}
+.ied-input:focus{box-shadow:0 0 2px var(--accent-dim);}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE ALIGNMENT FIXES — added on top of existing rules only.
+   No colors, fonts, sizes or component styling are changed here —
+   only layout/alignment for small screens, plus restoring the
+   logout control on mobile (previously hidden via .sb-user{display:none}).
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Tablet / narrow desktop (≤900px) ───────────────────────── */
+@media(max-width:900px){
+  /* vehicle detail header used to stay left-aligned in a column
+     layout, which looked lopsided under the round emoji icon */
+  .vd-header{align-items:center;text-align:center;}
+  .vd-info{width:100%;}
+  .vd-chips{justify-content:center;}
+  .vd-actions{justify-content:center;}
+}
+
+/* ── Phones (≤700px) ─────────────────────────────────────────── */
+@media(max-width:700px){
+  /* ---- Reordered header layout — pure CSS, no markup/JS needed ----
+     .sidebar and .main are "unwrapped" so their children (logo, nav,
+     user, topbar, content) can be freely reordered as one column:
+     [ logo + search/bell/profile ]  →  [ scrollable nav pills ]  →  [ page content ]
+     -------------------------------------------------------------- */
+  .app-shell.active{display:flex;flex-direction:column;height:100vh;}
+  .sidebar,.main{display:contents;}
+
+  /* Brand now lives at the very top, in the same row as search/bell/profile */
+  .sb-logo{
+    order:1;
+    background:#fff;border-bottom:1px solid var(--border);
+    padding:0.7rem 1rem;
+  }
+  .sb-user{display:none;} /* profile is reachable via the topbar profile icon instead */
+
+  /* Efficient horizontal pill menu, sits right under the header, no visible scrollbar */
+  .sb-nav{
+    order:2;flex:0 0 auto;
+    flex-direction:row;overflow-x:auto;overflow-y:visible;
+    background:#fff;border-bottom:1px solid var(--border);
+    padding:0.55rem 0.75rem;gap:6px;
+    scrollbar-width:none;
+  }
+  .sb-nav::-webkit-scrollbar{display:none;}
+  .nav-sep{display:none;}
+  .nav-item{
+    flex-shrink:0;white-space:nowrap;
+    background:var(--bg3);border:1.5px solid var(--border);
+    border-radius:20px;padding:0.5rem 0.9rem;
+  }
+  .nav-item.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+  /* Search-icon / bell / profile row */
+  .topbar{order:3;flex-wrap:nowrap;gap:8px;padding:0.7rem 1rem;}
+  .tb-title{display:none;} /* was showing the dynamic page name a second time — logo covers branding now */
+
+  /* Search collapses to a single icon; tapping/focusing expands it — no layout jump elsewhere */
+  .search{
+    order:2;flex:0 0 auto;margin-left:auto;
+    width:34px;height:34px;padding:0;gap:0;
+    justify-content:center;overflow:hidden;
+    border-color:transparent;background:transparent;box-shadow:none;
+    transition:width 0.22s ease,background 0.22s ease,border-color 0.22s ease,padding 0.22s ease,gap 0.22s ease;
+  }
+  .search input{
+    width:0;min-width:0;padding:0;opacity:0;
+    transition:width 0.22s ease,opacity 0.15s ease;
+  }
+  .search:focus-within{
+    width:150px;padding:0.46rem 0.7rem;gap:7px;
+    background:var(--bg3);border-color:var(--border);box-shadow:var(--shadow-xs);
+  }
+  .search:focus-within input{width:100%;opacity:1;}
+
+  /* Remaining topbar icons (notification bell, profile) sit as a tight cluster beside search */
+  .tb-btn{order:3;width:34px;height:34px;flex-shrink:0;}
+
+  .content{order:4;flex:1;overflow-y:auto;}
+
+  /* Upcoming list: keep due-date pinned right even if it wraps */
+  .up-item{flex-wrap:wrap;row-gap:4px;}
+  .up-due{margin-left:auto;}
+
+  /* Notification items: icon aligns to the top of the text block */
+  .ni-item{align-items:flex-start;}
+
+  /* Interval modal rows: the fixed 230px column overflowed narrow
+     screens — stack label and inputs instead */
+  .int-row{grid-template-columns:1fr;align-items:flex-start;gap:8px;}
+  .int-right{justify-content:flex-start;flex-wrap:wrap;width:100%;}
+
+  /* Modal footer buttons: equal width instead of shrinking unevenly */
+  .mf{flex-wrap:wrap;}
+  .mf button{flex:1 1 auto;min-width:110px;}
+
+  /* Vehicle detail action buttons: full-width stacked, easier to tap */
+  .vd-actions{flex-direction:column;align-items:stretch;}
+  .vd-actions .btn-prim,.vd-actions .btn-sec,.vd-actions .btn-danger{width:100%;}
+
+  /* Settings action row: wrap cleanly instead of overflowing */
+  .settings-actions{flex-wrap:wrap;}
+  .settings-actions .btn-prim{flex:1 1 auto;}
+
+  /* Service table rows: keep each stacked field left-aligned and
+     badges from centering oddly inside the single column */
+  .st-row{align-items:flex-start;row-gap:5px;}
+  .st-row .badge{align-self:flex-start;}
+}
+
+/* ── Small phones (≤480px) ──────────────────────────────────── */
+@media(max-width:480px){
+  .auth-right{padding:1.75rem 1.25rem;}
+  .prof-card{padding:1.25rem;}
+  .notif-settings{padding:1.1rem;}
+  .modal .mb{padding:1.1rem;}
+  .modal .mh{padding:1rem 1.1rem;}
+  .modal .mf{padding:0.9rem 1.1rem;}
+  .stats-row{gap:0.7rem;}
+  .sc{padding:1rem;}
+}
