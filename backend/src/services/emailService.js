@@ -6,32 +6,6 @@ const logger     = require('../config/logger');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-let transporter;
-const getTransporter = () => {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 465,
-      secure: String(process.env.SMTP_SECURE).toLowerCase() === 'true',
-    
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    
-      tls: {
-        rejectUnauthorized: false
-      },
-    
-      connectionTimeout: 5000,
-      greetingTimeout: 5000,
-      socketTimeout: 5000,
-    });
-  }
-  
-  return transporter;
-};
->>>>>>> 4140445c608d3f0134fc5d8aa72fbd2c336c1adf
 
 const readingUnit = (d) => d.unit || 'km';
 const fmtReading = (value, d) => `${Number(value || 0).toLocaleString()} ${readingUnit(d)}`;
