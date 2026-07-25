@@ -3,9 +3,9 @@ const { Resend } = require('resend');
 const { query }  = require('../config/database');
 const logger     = require('../config/logger');
 
-<<<<<<< HEAD
+
 const resend = new Resend(process.env.RESEND_API_KEY);
-=======
+
 let transporter;
 const getTransporter = () => {
   if (!transporter) {
