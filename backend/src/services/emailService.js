@@ -1,33 +1,9 @@
 // src/services/emailService.js
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const { query }  = require('../config/database');
 const logger     = require('../config/logger');
 
-let transporter;
-const getTransporter = () => {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 587,
-      secure: String(process.env.SMTP_SECURE).toLowerCase() === 'true',
-    
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    
-      tls: {
-        rejectUnauthorized: false
-      },
-    
-      connectionTimeout: 5000,
-      greetingTimeout: 5000,
-      socketTimeout: 5000,
-    });
-  }
-  
-  return transporter;
-};
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const readingUnit = (d) => d.unit || 'km';
 const fmtReading = (value, d) => `${Number(value || 0).toLocaleString()} ${readingUnit(d)}`;
@@ -268,25 +244,39 @@ async function sendEmail({ userId, vehicleId, serviceName, type, bracket, email,
   const subject  = subjects[type]    ? subjects[type](templateData)    : `MotoTrack — ${type}`;
 
   try {
-    const fromAddress = process.env.EMAIL_FROM || process.env.SMTP_USER;
-    const info = await getTransporter().sendMail({
-      from:    `"${process.env.EMAIL_FROM_NAME || 'MotoTrack'}" <${fromAddress}>`,
-      to:      email,
+      const fromAddress = process.env.EMAIL_FROM;
+
+    const { data, error } = await resend.emails.send({
+      from: `${process.env.EMAIL_FROM_NAME || "MotoTrack"} <${fromAddress}>`,
+      to: [email],
       subject,
-      html:    htmlBody,
+      html: htmlBody,
     });
 
-    // Store bracket in error_detail so scheduler can deduplicate overdue reminders per threshold.
+    if (error) {
+      throw new Error(error.message);
+    }
+
     await query(
-      `UPDATE notification_log SET status='sent', message_id=$1, sent_at=NOW(), error_detail=$2 WHERE id=$3`,
-      [info.messageId, bracket || null, log.id]
+      `UPDATE notification_log
+        SET status='sent',
+            message_id=$1,
+            sent_at=NOW(),
+            error_detail=$2
+      WHERE id=$3`,
+      [data.id, bracket || null, log.id]
     );
 
-    logger.info(`Email sent [${type}] → ${email}`);
-    logger.info(`SMTP response [${type}] -> ${email} | accepted=${(info.accepted || []).join(',') || 'none'} | rejected=${(info.rejected || []).join(',') || 'none'} | response=${info.response || 'n/a'}`);
-    return { success: true, messageId: info.messageId, accepted: info.accepted, rejected: info.rejected, response: info.response };
+    logger.info(`Email sent [${type}] -> ${email}`);
+    logger.info(`Resend Message ID: ${data.id}`);
 
-  } catch (err) {
+    return {
+      success: true,
+      messageId: data.id
+    };
+
+  } 
+  catch (err) {
     await query(
       `UPDATE notification_log SET status='failed', error_detail=$1 WHERE id=$2`,
       [err.message, log.id]
