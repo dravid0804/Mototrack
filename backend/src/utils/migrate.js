@@ -107,11 +107,27 @@ CREATE TABLE IF NOT EXISTS vehicle_service_config (
   UNIQUE (vehicle_id, catalogue_id)
 );
 
+-- ── Custom (user-defined) Services — per vehicle, per user ──────────────────
+CREATE TABLE IF NOT EXISTS custom_services (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  vehicle_id      UUID         NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+  service_name    VARCHAR(120) NOT NULL,
+  interval_km     INT,
+  interval_months INT,
+  spec            VARCHAR(120),
+  qty             VARCHAR(40),
+  priority        VARCHAR(10)  DEFAULT 'normal' CHECK (priority IN ('critical','high','normal','low')),
+  is_enabled      BOOLEAN      DEFAULT TRUE,
+  created_at      TIMESTAMPTZ  DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_custom_services_vehicle ON custom_services(vehicle_id);
+
 -- ── Service Records (completed services) ────────────────────────────────────
 CREATE TABLE IF NOT EXISTS service_records (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   vehicle_id      UUID         NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
   catalogue_id    UUID         REFERENCES service_catalogue(id),
+  custom_service_id UUID       REFERENCES custom_services(id) ON DELETE CASCADE,
   service_name    VARCHAR(120) NOT NULL,  -- denormalised copy
   done_at         DATE         NOT NULL DEFAULT CURRENT_DATE,
   done_km         INT          NOT NULL,
@@ -124,6 +140,7 @@ CREATE TABLE IF NOT EXISTS service_records (
   notes           TEXT,
   created_at      TIMESTAMPTZ  DEFAULT NOW()
 );
+ALTER TABLE service_records ADD COLUMN IF NOT EXISTS custom_service_id UUID REFERENCES custom_services(id) ON DELETE CASCADE;
 CREATE INDEX IF NOT EXISTS idx_records_vehicle ON service_records(vehicle_id);
 CREATE INDEX IF NOT EXISTS idx_records_catalogue ON service_records(catalogue_id);
 

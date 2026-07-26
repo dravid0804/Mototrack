@@ -186,7 +186,7 @@ async function runVehicleServiceAlerts(vehicle, options = {}) {
 
     if (svc.tracking_enabled === false)
       continue;
-      
+
     const triggerSource =
       kmStatus === type && dateStatus === type
         ? 'km-days'
@@ -251,6 +251,79 @@ async function runVehicleServiceAlerts(vehicle, options = {}) {
     logger.info(
       `[${type.toUpperCase()}] ${vehicle.make} ${vehicle.model} - ${svc.service_name}`
     );
+  }
+
+  // ── Custom (user-created) services ─────────────────────────────────────
+  const { rows: customServices } = await query(`
+    SELECT cs.*, sr.done_at, sr.done_km
+    FROM   custom_services cs
+    LEFT JOIN LATERAL (
+      SELECT done_at, done_km FROM service_records
+      WHERE vehicle_id=$1 AND custom_service_id=cs.id
+      ORDER BY done_km DESC, done_at DESC LIMIT 1
+    ) sr ON TRUE
+    WHERE  cs.vehicle_id=$1
+  `, [vehicle.id]);
+
+  for (const cs of customServices) {
+    let nextDueKm = null;
+    if (cs.interval_km) nextDueKm = (parseInt(cs.done_km, 10) || 0) + parseInt(cs.interval_km, 10);
+
+    let nextDueDate = null;
+    if (cs.interval_months) {
+      const d = new Date(cs.done_at || vehicle.created_at || Date.now());
+      d.setMonth(d.getMonth() + parseInt(cs.interval_months, 10));
+      nextDueDate = d;
+    }
+
+    if (!nextDueKm && !nextDueDate) continue;
+
+    const kmLeft   = nextDueKm   != null ? nextDueKm - currentKm : null;
+    const daysLeft = nextDueDate != null ? daysBetween(nextDueDate, today) : null;
+
+    const kmStatus   = kmLeft   == null ? 'ok' : kmLeft   < 0 ? 'overdue' : kmLeft   <= urgentKm   ? 'urgent' : kmLeft   <= warnKm   ? 'warning' : 'ok';
+    const dateStatus = daysLeft == null ? 'ok' : daysLeft < 0 ? 'overdue' : daysLeft <= urgentDays ? 'urgent' : daysLeft <= warnDays ? 'warning' : 'ok';
+    const order3 = { overdue: 0, urgent: 1, warning: 2, ok: 3 };
+    const type = order3[kmStatus] <= order3[dateStatus] ? kmStatus : dateStatus;
+
+    if (type === 'ok') continue;
+    if (cs.is_enabled === false) continue;
+
+    const triggerSource = kmStatus === type && dateStatus === type ? 'km-days' : kmStatus === type ? 'km' : 'days';
+    const marker = markerFor(type, triggerSource, kmLeft, warnKm, warnDays, nextDueKm, nextDueDate);
+
+    if (type === 'overdue') {
+      if (sentMap.has(`${cs.service_name}|overdue|today|${todayString}`) || sentMap.has(`${cs.service_name}|overdue|${marker}`)) continue;
+    } else {
+      if (sentMap.has(`${cs.service_name}|${type}|${marker}`)) continue;
+    }
+
+    await notify({
+      userId: user.id,
+      vehicleId: vehicle.id,
+      serviceName: cs.service_name,
+      type,
+      bracket: marker,
+      user,
+      vehicle,
+      templateData: {
+        serviceName: cs.service_name,
+        nextDueKm,
+        nextDueDate: nextDueDate ? nextDueDate.toDateString() : null,
+        currentKm,
+        kmLeft: kmLeft ?? 0,
+        daysLeft: daysLeft ?? 0,
+        unit,
+        spec: cs.spec,
+        qty: cs.qty,
+        description: 'Custom service you added for this vehicle.',
+        priority: cs.priority,
+        month: monthName
+      }
+    });
+
+    sentCount++;
+    logger.info(`[${type.toUpperCase()}] ${vehicle.make} ${vehicle.model} - ${cs.service_name} (custom)`);
   }
 
   return sentCount;

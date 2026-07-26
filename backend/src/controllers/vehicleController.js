@@ -285,6 +285,67 @@ exports.health = async (req, res, next) => {
       return { ...svc, nextDueKm, nextDueDate, kmLeft, daysLeft, pct, status, trackingEnabled: svc.tracking_enabled };
     });
 
-    res.json({ success: true, vehicle, services: enriched });
+    // ── Custom (user-created) services for this vehicle ────────────────────
+    const { rows: customRows } = await query(
+      'SELECT * FROM custom_services WHERE vehicle_id=$1 ORDER BY created_at DESC',
+      [vehicle.id]
+    );
+    const { rows: customLastDone } = await query(`
+      SELECT DISTINCT ON (custom_service_id) custom_service_id, done_at, done_km
+      FROM service_records
+      WHERE vehicle_id=$1 AND custom_service_id IS NOT NULL
+      ORDER BY custom_service_id, done_km DESC, done_at DESC
+    `, [vehicle.id]);
+    const lastDoneMap = new Map(customLastDone.map(r => [r.custom_service_id, r]));
+
+    const enrichedCustom = customRows.map(cs => {
+      const last = lastDoneMap.get(cs.id);
+      let nextDueKm = null;
+      if (cs.interval_km) nextDueKm = (parseInt(last?.done_km, 10) || 0) + parseInt(cs.interval_km, 10);
+
+      let nextDueDate = null;
+      if (cs.interval_months) {
+        const d = new Date(last?.done_at || cs.created_at || Date.now());
+        d.setMonth(d.getMonth() + parseInt(cs.interval_months, 10));
+        nextDueDate = d;
+      }
+
+      const kmLeft = nextDueKm != null ? nextDueKm - currentKm : null;
+      const pct    = (nextDueKm && last?.done_km && cs.interval_km)
+                   ? Math.min(100, Math.max(0, Math.round((currentKm - last.done_km) / cs.interval_km * 100)))
+                   : null;
+      const daysLeft = nextDueDate
+        ? Math.round((new Date(nextDueDate) - new Date()) / 86400000)
+        : null;
+
+      const warnKm = parseInt(req.user.warn_km, 10) || 100;
+      const warnDays = parseInt(req.user.warn_days, 10) || 7;
+      const kmStatus   = kmLeft   == null ? 'unknown' : kmLeft   < 0 ? 'overdue' : kmLeft   <= 50 ? 'urgent' : kmLeft   <= warnKm ? 'warning' : 'ok';
+      const dateStatus = daysLeft == null ? 'unknown' : daysLeft < 0 ? 'overdue' : daysLeft <= 10 ? 'urgent' : daysLeft <= warnDays ? 'warning' : 'ok';
+      const statusOrder = { overdue: 0, urgent: 1, warning: 2, ok: 3, unknown: 4 };
+      const status = statusOrder[kmStatus] <= statusOrder[dateStatus] ? kmStatus : dateStatus;
+
+      return {
+        catalogue_id: null,
+        custom_service_id: cs.id,
+        isCustom: true,
+        service_name: cs.service_name,
+        priority: cs.priority,
+        interval_km: cs.interval_km,
+        interval_months: cs.interval_months,
+        default_interval_km: cs.interval_km,
+        default_interval_months: cs.interval_months,
+        spec: cs.spec,
+        qty: cs.qty,
+        has_custom: true,
+        tracking_enabled: cs.is_enabled,
+        trackingEnabled: cs.is_enabled,
+        done_at: last?.done_at || null,
+        done_km: last?.done_km || null,
+        nextDueKm, nextDueDate, kmLeft, daysLeft, pct, status,
+      };
+    });
+
+    res.json({ success: true, vehicle, services: [...enriched, ...enrichedCustom] });
   } catch (err) { next(err); }
 };

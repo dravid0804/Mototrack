@@ -112,8 +112,8 @@
     <div class="topbar">
       <div class="tb-title" id="TB_TITLE">Dashboard</div>
       <div class="search"><span>🔍</span><input id="searchInput" placeholder="Search vehicles, services..." oninput="handleSearch(this.value)"></div>
-      <div class="tb-btn" onclick="nav(document.querySelector('[data-view=notifications]'))">🔔<span class="nb hidden" id="TOP_NB"></span></div>
-      <div class="tb-btn" onclick="nav(document.querySelector('[data-view=profile]'))">👤</div>
+      <div class="tb-btn" id="TOP_BELL" onclick="nav(document.querySelector('[data-view=notifications]'))">🔔<span class="nb hidden" id="TOP_NB"></span></div>
+<div class="tb-btn" onclick="nav(document.querySelector('[data-view=profile]'))">👤</div>
     </div>
 
     <div class="content">
@@ -167,10 +167,12 @@
             <option value="warning">Due Soon</option>
             <option value="ok">Healthy</option>
           </select>
-          <button class="btn-prim" style="margin-left:auto;font-size:0.82rem;padding:6px 14px;" onclick="openLogModal()">＋ Log Service</button>
+          <span id="svcLogTotalCost" style="margin-left:auto;font-size:0.82rem;font-weight:700;color:var(--green)"></span>
+          <button class="btn-sec" style="font-size:0.82rem;padding:6px 14px;" onclick="downloadServiceLogPdf()">📄 Download PDF</button>
+          <button class="btn-prim" style="font-size:0.82rem;padding:6px 14px;" onclick="openLogModal()">＋ Log Service</button>
         </div>
         <div class="svc-table">
-          <div class="st-head"><div>Service</div><div>Vehicle</div><div>Date</div><div>Reading</div><div>Status</div><div>Next Due</div></div>
+          <div class="st-head"><div>Service</div><div>Vehicle</div><div>Date</div><div>Reading</div><div>Cost</div><div>Status</div><div>Next Due</div></div>
           <div id="serviceLogBody"></div>
         </div>
       </div>
@@ -255,14 +257,16 @@
             <div class="fsec-title">Basic Info</div>
             <div class="form-row">
               <div class="field"><label>Make / Brand</label>
-                <select id="av_make">
+                <select id="av_make" onchange="populateModelOptions()">
                   <option value="">Select make</option>
-                  <optgroup label="Cars"><option>Hyundai</option><option>Toyota</option><option>Honda</option><option>Maruti Suzuki</option><option>Tata</option><option>Mahindra</option><option>Kia</option><option>MG</option><option>Volkswagen</option><option>Skoda</option><option>Ford</option><option>Renault</option></optgroup>
-                  <optgroup label="Bikes"><option>Royal Enfield</option><option>Honda</option><option>Yamaha</option><option>Bajaj</option><option>TVS</option><option>Hero</option><option>KTM</option><option>Suzuki</option><option>Kawasaki</option><option>Triumph</option></optgroup>
-                  <optgroup label="Tractors"><option>Mahindra</option><option>Swaraj</option><option>Sonalika</option><option>TAFE</option><option>Massey Ferguson</option><option>Eicher</option><option>John Deere</option><option>New Holland</option><option>Powertrac</option><option>Farmtrac</option></optgroup>
                 </select>
               </div>
-              <div class="field"><label>Model</label><input type="text" id="av_model" placeholder="e.g. CB500X, i20, 575 DI"></div>
+              <div class="field"><label>Model</label>
+                <select id="av_model_select" onchange="handleModelSelect()" disabled>
+                  <option value="">Select make first</option>
+                </select>
+                <input type="text" id="av_model" placeholder="Type model name" style="margin-top:8px;display:none">
+              </div>
             </div>
             <div class="form-row">
               <div class="field"><label>Year</label>
@@ -402,6 +406,38 @@
     <div class="mf">
       <button class="btn-sec" onclick="closeModal('MODAL_KM')">Cancel</button>
       <button class="btn-prim" onclick="saveKm()">Update →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CUSTOM SERVICE MODAL -->
+<div class="overlay" id="MODAL_CUSTOM_SVC">
+  <div class="modal">
+    <div class="mh"><h2>➕ Add Custom Service</h2><button class="mclose" onclick="closeModal('MODAL_CUSTOM_SVC')">✕</button></div>
+    <div class="mb">
+      <div class="field"><label>Service Name</label><input type="text" id="cs_name" placeholder="e.g. Suspension Bush Check"></div>
+      <div class="form-row">
+        <div class="field"><label>Interval (km / hrs)</label><input type="number" id="cs_interval_km" placeholder="e.g. 5000" min="1"></div>
+        <div class="field"><label>Interval (months)</label><input type="number" id="cs_interval_months" placeholder="e.g. 6" min="1"></div>
+      </div>
+      <div class="field"><label>Oil / Fluid / Part Spec</label><input type="text" id="cs_spec" placeholder="e.g. Grade / part name"></div>
+      <div class="form-row">
+        <div class="field"><label>Quantity (optional)</label><input type="text" id="cs_qty" placeholder="e.g. 1 unit"></div>
+        <div class="field"><label>Priority</label>
+          <select id="cs_priority">
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-info">Provide at least one interval (km/hrs or months) — the alert fires on whichever comes first, same as built-in services.</div>
+      <div class="form-error hidden" id="csError"></div>
+    </div>
+    <div class="mf">
+      <button class="btn-sec" onclick="closeModal('MODAL_CUSTOM_SVC')">Cancel</button>
+      <button class="btn-prim" id="csBtn" onclick="saveCustomService()">Add Service →</button>
     </div>
   </div>
 </div>

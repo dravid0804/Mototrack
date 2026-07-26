@@ -8,6 +8,7 @@ const vehicleCtrl= require('../controllers/vehicleController');
 const serviceCtrl= require('../controllers/serviceController');
 const notifCtrl  = require('../controllers/notificationController');
 const contactCtrl = require('../controllers/contactController');
+const customServiceCtrl = require('../controllers/customServiceController');
 
 const router = express.Router();
 
@@ -44,6 +45,10 @@ router.post  ('/vehicles/:id/resync',     auth, vehicleCtrl.resync);
 router.post  ('/vehicles/:id/intervals', auth, vehicleCtrl.saveInterval);
 router.post  ('/vehicles/:id/spec',      auth, vehicleCtrl.saveSpec);
 router.post  ('/vehicles/:id/tracking',  auth, vehicleCtrl.toggleTracking);
+router.post  ('/vehicles/:id/custom-services',                     auth, customServiceCtrl.create);
+router.patch ('/vehicles/:id/custom-services/:customId',            auth, customServiceCtrl.update);
+router.post  ('/vehicles/:id/custom-services/:customId/tracking',   auth, customServiceCtrl.toggleTracking);
+router.delete('/vehicles/:id/custom-services/:customId',            auth, customServiceCtrl.remove);
 // ── Contact ───────────────────────────────────────────────────────────────
 router.post('/contact', auth, contactCtrl.send);
 
@@ -56,6 +61,7 @@ router.post  ('/services', [
 ], auth, serviceCtrl.create);
 router.delete('/services/:id',      auth, serviceCtrl.delete);
 router.get   ('/services/upcoming', auth, serviceCtrl.upcoming);
+router.get   ('/services/pdf',      auth, serviceCtrl.exportPdf);
 
 // ── Notifications ─────────────────────────────────────────────────────────
 router.get('/notifications',       auth, notifCtrl.list);
