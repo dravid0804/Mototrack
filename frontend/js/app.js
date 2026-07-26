@@ -103,7 +103,7 @@ function hydrateUser(u) {
 const VTITLES = {
   dashboard: 'Dashboard', vehicles: 'My Vehicles', vehicleDetail: 'Vehicle Detail',
   servicelog: 'Service Log', upcoming: 'Upcoming Services', notifications: 'Notifications',
-  alerts: 'Alert Settings', addVehicle: 'Add Vehicle', profile: 'Profile & Settings',
+  alerts: 'Alert Settings', addVehicle: 'Add Vehicle', profile: 'Profile & Settings', contactus: 'Contact Us',
 };
 
 function nav(el) {
@@ -124,6 +124,7 @@ function nav(el) {
   if (id === 'notifications') loadNotifications('');
   if (id === 'profile')       fillProfileForm();
   if (id === 'alerts')        fillAlertSettings();
+  if (id === 'contactus')     fillContactForm();
 }
 
 function restoreAppView() {
@@ -395,7 +396,8 @@ async function openVehicleDetail(id) {
       <!-- ✏ Editable note banner -->
       <div class="svc-edit-note">
         ✏️ <strong>Oil grade and quantity are pre-filled from manufacturer defaults.</strong>
-        Your vehicle may use a different spec or capacity — click the <span class="svc-edit-badge">✏ Edit</span> button on any card to update the oil grade and quantity for that service.
+        Your vehicle may use a different spec or capacity — click the <span class="svc-edit-badge">✏ Edit</span> button on any card to update the oil grade and quantity for that service.<br>
+        ✏️ Tracking button — ON = we'll email you. OFF = we'll just watch silently. 👀
       </div>
 
       <div class="svc-grid">`;
@@ -415,9 +417,16 @@ async function openVehicleDetail(id) {
 
       // Safe IDs for inline editing
       const safeId = s.catalogue_id ? s.catalogue_id.replace(/-/g,'') : 'x';
-
+      const trackingOn = s.trackingEnabled !== false;
       html += `
         <div class="svc-card" style="border-left:4px solid ${bcolor}" id="svc-card-${safeId}">
+          <div class="svc-track-wrap">
+            <label class="svc-track-toggle" title="Enable/disable alerts for this service">
+              <input type="checkbox" id="track-input-${safeId}" ${trackingOn ? 'checked' : ''} onchange="toggleServiceTracking(this,'${v.id}','${s.catalogue_id}','${safeId}')">
+              <span class="svc-track-slider"></span>
+            </label>
+            <div class="svc-track-label ${trackingOn ? 'on' : 'off'}" id="track-label-${safeId}">${trackingOn ? 'Tracking' : 'Not Tracking'}</div>
+          </div>
           <div class="svc-head">
             <div class="svc-name">${s.service_name}</div>
             <span class="badge ${bc}"><span class="b-dot"></span>${bt}</span>
@@ -497,6 +506,31 @@ function startInlineEdit(field, safeId, vehicleId, catalogueId) {
   edit.style.display = 'flex';
   input.focus();
   input.select();
+}
+
+async function toggleServiceTracking(checkbox, vehicleId, catalogueId, safeId) {
+  const enabled = checkbox.checked;
+  const label = document.getElementById(`track-label-${safeId}`);
+  try {
+    const res = await fetch(`${window.location.origin}/api/vehicles/${vehicleId}/tracking`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + api.getToken() },
+      body:    JSON.stringify({ catalogue_id: catalogueId, is_enabled: enabled }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message);
+    if (label) {
+      label.textContent = enabled ? 'Tracking' : 'Not Tracking';
+      label.classList.toggle('on', enabled);
+      label.classList.toggle('off', !enabled);
+    }
+    const svc = (STATE.currentVehicleSvcs || []).find(s => s.catalogue_id === catalogueId);
+    if (svc) svc.trackingEnabled = enabled;
+    showToast(enabled ? 'Tracking enabled — alerts will be sent.' : 'Tracking disabled — no alerts will be sent for this service.');
+  } catch (e) {
+    checkbox.checked = !enabled;
+    showToast('Failed to update tracking: ' + e.message, 'error');
+  }
 }
 
 function cancelInlineEdit(field, safeId) {
@@ -860,6 +894,29 @@ function fillProfileForm() {
   $('pf_em_toggle').classList.toggle('on', u.notify_email !== false);
   $('ps_vehicles').textContent = STATE.vehicles.length;
   fillAlertSettings();
+}
+
+function fillContactForm() {
+  if (!STATE.user) return;
+  if ($('cu_email')) $('cu_email').value = STATE.user.email || '';
+}
+
+async function sendContactMessage() {
+  hideError('cuError');
+  const subject = $('cu_subject').value.trim();
+  const message = $('cu_message').value.trim();
+  if (!subject || !message) return showError('cuError', 'Please fill in both subject and message.');
+  setLoading('cuBtn', true);
+  try {
+    await api.contactUs({ subject, message });
+    showToast('Message sent! Thanks for the feedback.');
+    $('cu_subject').value = '';
+    $('cu_message').value = '';
+  } catch (e) {
+    showError('cuError', e.message || 'Failed to send message.');
+  } finally {
+    setLoading('cuBtn', false); $('cuBtn').textContent = 'Send Message →';
+  }
 }
 
 async function toggleProfileEmail(el) {

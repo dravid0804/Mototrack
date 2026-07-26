@@ -97,6 +97,7 @@
       <div class="nav-item" data-view="upcoming" onclick="nav(this)"><span class="ni">📅</span>Upcoming</div>
       <div class="nav-sep">Settings</div>
       <div class="nav-item" data-view="alerts" onclick="nav(this)"><span class="ni">📨</span>Alert Settings</div>
+      <div class="nav-item" data-view="contactus" onclick="nav(this)"><span class="ni">✉️</span>Contact Us</div>
       <div class="nav-item" data-view="profile" onclick="nav(this)"><span class="ni">👤</span>Profile</div>
       <center><div><button class="u-logout" onclick="logout()" title="Logout">⏻LogOut</button></div></center>
     </nav>
@@ -296,6 +297,23 @@
         </div>
       </div>
 
+
+      <!-- ─── CONTACT US ─── -->
+      <div class="view fu" id="V_contactus">
+        <div class="page-h"><div class="breadcrumb">Home › <span>Contact Us</span></div><h1>Contact Us</h1><p>Found a bug, or have an idea to improve MotoTrack? Send it straight to us.</p></div>
+        <div class="settings-card" style="max-width:640px">
+          <div class="settings-section">
+            <h3>Send a message</h3>
+            <div class="field"><label>Your Email</label><input type="email" id="cu_email" disabled></div>
+            <div class="field"><label>Subject</label><input type="text" id="cu_subject" placeholder="e.g. Feature request, bug report..."></div>
+            <div class="field"><label>Message</label>
+              <textarea id="cu_message" rows="6" placeholder="Tell us what's on your mind..." style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:var(--r2);padding:0.75rem 1rem;color:var(--text);font-family:var(--font-body);font-size:0.88rem;outline:none;resize:vertical"></textarea>
+            </div>
+            <div class="form-error hidden" id="cuError"></div>
+            <button class="btn-prim" id="cuBtn" style="font-size:0.83rem;padding:8px 20px;margin-top:0.5rem" onclick="sendContactMessage()">Send Message →</button>
+          </div>
+        </div>
+      </div>
       <!-- ─── PROFILE ─── -->
       <div class="view fu" id="V_profile">
         <div class="page-h"><div class="breadcrumb">Home › <span>Profile</span></div><h1>Profile &amp; Settings</h1></div>

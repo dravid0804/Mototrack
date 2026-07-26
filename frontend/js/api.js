@@ -67,4 +67,6 @@ const api = {
 
   // ── Catalogue ─────────────────────────────────────────────────────────
   getCatalogue: (type, fuel) => api.get(`/catalogue?type=${type}&fuel_type=${fuel || 'any'}`),
+  // ── Contact ───────────────────────────────────────────────────────────
+  contactUs: (body) => api.post('/contact', body),
 };
