@@ -26,7 +26,7 @@ async function runOdometerUpdateReminders() {
       WHERE  vehicle_id = $1
         AND  type = 'odometer'
         AND  status = 'sent'
-        AND  sent_at > NOW() - INTERVAL '7 days'
+        AND  sent_at > NOW() - INTERVAL '3 days'
       LIMIT 1
     `, [vehicle.id]);
 

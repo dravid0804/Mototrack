@@ -7,6 +7,7 @@ const authCtrl   = require('../controllers/authController');
 const vehicleCtrl= require('../controllers/vehicleController');
 const serviceCtrl= require('../controllers/serviceController');
 const notifCtrl  = require('../controllers/notificationController');
+const contactCtrl = require('../controllers/contactController');
 
 const router = express.Router();
 
@@ -42,6 +43,9 @@ router.get   ('/vehicles/:id/health',  auth, vehicleCtrl.health);
 router.post  ('/vehicles/:id/resync',     auth, vehicleCtrl.resync);
 router.post  ('/vehicles/:id/intervals', auth, vehicleCtrl.saveInterval);
 router.post  ('/vehicles/:id/spec',      auth, vehicleCtrl.saveSpec);
+router.post  ('/vehicles/:id/tracking',  auth, vehicleCtrl.toggleTracking);
+// ── Contact ───────────────────────────────────────────────────────────────
+router.post('/contact', auth, contactCtrl.send);
 
 // ── Service Records ───────────────────────────────────────────────────────
 router.get   ('/services',          auth, serviceCtrl.list);

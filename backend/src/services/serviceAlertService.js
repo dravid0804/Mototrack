@@ -75,6 +75,7 @@ async function runVehicleServiceAlerts(vehicle, options = {}) {
              COALESCE(vsc.custom_interval_months, sc.interval_months) AS eff_interval_months,
              COALESCE(vsc.custom_spec,            sc.default_spec)    AS eff_spec,
              COALESCE(vsc.custom_qty,             sc.default_qty)     AS eff_qty,
+             COALESCE(vsc.is_enabled,             TRUE)               AS tracking_enabled,
              sr.done_at, sr.done_km
       FROM service_catalogue sc
       LEFT JOIN vehicle_service_config vsc
@@ -183,6 +184,9 @@ async function runVehicleServiceAlerts(vehicle, options = {}) {
     if (type === 'ok')
       continue;
 
+    if (svc.tracking_enabled === false)
+      continue;
+      
     const triggerSource =
       kmStatus === type && dateStatus === type
         ? 'km-days'

@@ -3,35 +3,8 @@ const { Resend } = require('resend');
 const { query }  = require('../config/database');
 const logger     = require('../config/logger');
 
-<<<<<<< HEAD
 const resend = new Resend(process.env.RESEND_API_KEY);
-=======
-let transporter;
-const getTransporter = () => {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 465,
-      secure: String(process.env.SMTP_SECURE).toLowerCase() === 'true',
-    
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    
-      tls: {
-        rejectUnauthorized: false
-      },
-    
-      connectionTimeout: 5000,
-      greetingTimeout: 5000,
-      socketTimeout: 5000,
-    });
-  }
-  
-  return transporter;
-};
->>>>>>> 4140445c608d3f0134fc5d8aa72fbd2c336c1adf
+
 
 const readingUnit = (d) => d.unit || 'km';
 const fmtReading = (value, d) => `${Number(value || 0).toLocaleString()} ${readingUnit(d)}`;
@@ -242,7 +215,7 @@ emailBodies.odometer = (d) => baseHtml(
      <tr><td style="padding:8px 0;color:#8892B0;font-size:13px;">Last saved reading</td><td style="padding:8px 0;color:#2563EB;font-size:13px;font-weight:700;text-align:right;">${fmtReading(d.currentKm, d)}</td></tr>
    </table>
    <a href="${d.updateUrl}" style="display:inline-block;background:#2563EB;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;font-size:14px;">Update odometer</a>
-   <p style="font-size:12px;color:#8892B0;margin:16px 0 0;">You will receive this reminder every week until the reading is kept up to date.</p>`
+   <p style="font-size:12px;color:#8892B0;margin:16px 0 0;">You will receive this reminder every 3 days until the reading is kept up to date.</p>`
 );
 
 // ── Subject lines ─────────────────────────────────────────────────────────

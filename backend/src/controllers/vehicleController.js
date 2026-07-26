@@ -157,6 +157,30 @@ exports.saveSpec = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+exports.toggleTracking = async (req, res, next) => {
+  try {
+    const { catalogue_id, is_enabled } = req.body;
+    if (!catalogue_id) return res.status(400).json({ success: false, message: 'catalogue_id required' });
+
+    const { rows: [vehicle] } = await query(
+      'SELECT id FROM vehicles WHERE id=$1 AND user_id=$2',
+      [req.params.id, req.user.id]
+    );
+    if (!vehicle) return res.status(404).json({ success: false, message: 'Vehicle not found' });
+
+    const enabled = is_enabled !== false;
+
+    await query(`
+      INSERT INTO vehicle_service_config (vehicle_id, catalogue_id, is_enabled)
+      VALUES ($1, $2, $3)
+      ON CONFLICT (vehicle_id, catalogue_id) DO UPDATE
+        SET is_enabled = EXCLUDED.is_enabled
+    `, [req.params.id, catalogue_id, enabled]);
+
+    res.json({ success: true, message: 'Tracking preference saved', is_enabled: enabled });
+  } catch (err) { next(err); }
+};
+
 // Re-sync service config for existing vehicle (adds missing catalogue entries)
 exports.resync = async (req, res, next) => {
   try {
@@ -206,6 +230,7 @@ exports.health = async (req, res, next) => {
              COALESCE(vsc.custom_spec,            sc.default_spec)    AS spec,
              COALESCE(vsc.custom_qty,             sc.default_qty)     AS qty,
              CASE WHEN vsc.id IS NOT NULL THEN true ELSE false END     AS has_custom,
+             COALESCE(vsc.is_enabled, TRUE)                            AS tracking_enabled,
              sr.done_at, sr.done_km, sr.next_due_km, sr.next_due_date,
              sr.spec_used, sr.qty_used
       FROM   service_catalogue sc
@@ -257,7 +282,7 @@ exports.health = async (req, res, next) => {
       const statusOrder = { overdue: 0, urgent: 1, warning: 2, ok: 3, unknown: 4 };
       const status = statusOrder[kmStatus] <= statusOrder[dateStatus] ? kmStatus : dateStatus;
 
-      return { ...svc, nextDueKm, nextDueDate, kmLeft, daysLeft, pct, status };
+      return { ...svc, nextDueKm, nextDueDate, kmLeft, daysLeft, pct, status, trackingEnabled: svc.tracking_enabled };
     });
 
     res.json({ success: true, vehicle, services: enriched });
