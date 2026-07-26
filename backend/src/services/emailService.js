@@ -3,6 +3,10 @@ const { Resend } = require('resend');
 const { query }  = require('../config/database');
 const logger     = require('../config/logger');
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5fa1db6a7f021388c8e974c17a38ab55c2843cac
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 
