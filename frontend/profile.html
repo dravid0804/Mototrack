@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — MotoTrack</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/common.css">
+</head>
+<body data-page="profile">
+
+<div class="app-shell active">
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="logo-sq">⚙</div>
+      <div><div class="brand">MotoTrack</div><div class="tagline">Service Manager</div></div>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-sep">Overview</div>
+      <a class="nav-item" data-view="dashboard" href="dashboard.html"><span class="ni">◈</span>Dashboard</a>
+      <a class="nav-item" data-view="notifications" href="notifications.html"><span class="ni">🔔</span>Notifications<span class="nav-badge hidden" id="NB"></span></a>
+      <div class="nav-sep">Vehicles</div>
+      <a class="nav-item" data-view="vehicles" href="vehicles.html"><span class="ni">🚗</span>My Vehicles</a>
+      <a class="nav-item" data-view="addVehicle" href="add-vehicle.html"><span class="ni">＋</span>Add Vehicle</a>
+      <div class="nav-sep">Maintenance</div>
+      <a class="nav-item" data-view="servicelog" href="service-log.html"><span class="ni">📋</span>Service Log</a>
+      <a class="nav-item" data-view="upcoming" href="upcoming.html"><span class="ni">📅</span>Upcoming</a>
+      <div class="nav-sep">Settings</div>
+      <a class="nav-item" data-view="alerts" href="alerts.html"><span class="ni">📨</span>Alert Settings</a>
+      <a class="nav-item" data-view="contactus" href="contact.html"><span class="ni">✉️</span>Contact Us</a>
+      <a class="nav-item" data-view="profile" href="profile.html"><span class="ni">👤</span>Profile</a>
+      <center><div><button class="u-logout" onclick="logout()" title="Logout">⏻LogOut</button></div></center>
+    </nav>
+    <div class="sb-user">
+      <div class="u-av" id="SB_AV">?</div>
+      <div><div class="u-name" id="SB_NAME">Loading...</div><div class="u-email" id="SB_EMAIL"></div></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-title" id="TB_TITLE">Profile & Settings</div>
+      <div class="search"><span>🔍</span><input id="searchInput" placeholder="Search vehicles, services..." oninput="handleSearch(this.value)"></div>
+      <div class="tb-btn" id="TOP_BELL" onclick="window.location.href='notifications.html'">🔔<span class="nb hidden" id="TOP_NB"></span></div>
+      <div class="tb-btn" onclick="window.location.href='profile.html'">👤</div>
+    </div>
+
+    <div class="content">
+      <div class="page-h"><div class="breadcrumb">Home › <span>Profile</span></div><h1>Profile &amp; Settings</h1></div>
+      <div class="prof-grid">
+        <div class="prof-card">
+          <div class="prof-av" id="PR_AV">?</div>
+          <div class="prof-name" id="PR_NAME">—</div>
+          <div class="prof-email" id="PR_EMAIL">—</div>
+          <div class="prof-stats">
+            <div class="ps-it"><div class="ps-v" id="ps_vehicles">0</div><div class="ps-k">Vehicles</div></div>
+            <div class="ps-it"><div class="ps-v" id="ps_services">0</div><div class="ps-k">Services</div></div>
+            <div class="ps-it"><div class="ps-v" id="ps_alerts">0</div><div class="ps-k">Alerts Sent</div></div>
+            <div class="ps-it"><div class="ps-v">✓</div><div class="ps-k">Active</div></div>
+          </div>
+        </div>
+        <div class="settings-card">
+          <div class="settings-section">
+            <h3>Personal Information</h3>
+            <div class="form-row">
+              <div class="field"><label>First Name</label><input type="text" id="pf_first"></div>
+              <div class="field"><label>Last Name</label><input type="text" id="pf_last"></div>
+            </div>
+            <div class="field"><label>Email Address</label><input type="email" id="pf_email"></div>
+            <div class="form-error hidden" id="profileError"></div>
+            <button class="btn-prim" style="font-size:0.83rem;padding:8px 20px;margin-top:0.5rem" onclick="saveProfile()">Save Changes</button>
+          </div>
+          <div class="settings-section">
+            <h3>Notification Channels</h3>
+            <div class="toggle-row"><div class="tr-info"><div class="tl">Email alerts</div><div class="ts">Receive detailed email reminders</div></div><div class="toggle" id="pf_em_toggle" onclick="toggleProfileEmail(this)"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<a class="contact-fab" href="contact.html" aria-label="Something to tell us?">
+  <span class="contact-fab-tooltip">Something to tell us?</span>
+  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M36 10h20c2.2 0 4 1.8 4 4v14c0 2.2-1.8 4-4 4H46l-6 6v-6h-4c-2.2 0-4-1.8-4-4V14c0-2.2 1.8-4 4-4z" fill="currentColor"/>
+    <path d="M8 18h30c2.76 0 5 2.24 5 5v18c0 2.76-2.24 5-5 5H21l-9 8v-8h-4c-2.76 0-5-2.24-5-5V23c0-2.76 2.24-5 5-5z" fill="#fff" stroke="currentColor" stroke-width="3"/>
+  </svg>
+</a>
+
+<div class="toast hidden" id="toast"></div>
+
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
+<script src="js/profile.js"></script>
+</body>
+</html>

@@ -1,243 +1,5 @@
-// js/app.js — RevTrack
+// js/vehicle-detail.js — vehicle-detail.html only (?id=<vehicleId>)
 'use strict';
-
-const STATE = {
-  user: null, vehicles: [],
-  currentVehicleId: null, currentVehicleSvcs: [], currentVehicle: null,
-};
-
-const MAKES_BY_TYPE = {
-  car: ['Hyundai','Toyota','Honda','Maruti Suzuki','Tata','Mahindra','Kia','MG','Volkswagen','Skoda','Ford','Renault'],
-  bike: ['Royal Enfield','Honda','Yamaha','Bajaj','TVS','Hero','KTM','Suzuki','Kawasaki','Triumph'],
-  tractor: ['Mahindra','Swaraj','Sonalika','TAFE','Massey Ferguson','Eicher','John Deere','New Holland','Powertrac','Farmtrac'],
-};
-
-const MODELS_BY_MAKE = {
-  'car|Hyundai': ['Grand i10 Nios','i20','Verna','Venue','Creta','Alcazar','Exter','Tucson'],
-  'car|Toyota': ['Glanza','Urban Cruiser Hyryder','Innova Crysta','Fortuner','Camry','Rumion'],
-  'car|Honda': ['Amaze','City','Elevate','WR-V'],
-  'car|Maruti Suzuki': ['Alto K10','Swift','Baleno','Dzire','WagonR','Brezza','Ertiga','Grand Vitara'],
-  'car|Tata': ['Tiago','Tigor','Altroz','Punch','Nexon','Harrier','Safari'],
-  'car|Mahindra': ['Bolero','Scorpio-N','XUV300','XUV700','Thar','Marazzo'],
-  'car|Kia': ['Sonet','Seltos','Carens','Carnival'],
-  'car|MG': ['Astor','Hector','ZS EV','Comet EV'],
-  'car|Volkswagen': ['Polo','Virtus','Taigun'],
-  'car|Skoda': ['Slavia','Kushaq','Kodiaq'],
-  'car|Ford': ['EcoSport','Endeavour','Figo'],
-  'car|Renault': ['Kwid','Triber','Kiger'],
-
-  'bike|Royal Enfield': ['Classic 350','Bullet 350','Hunter 350','Meteor 350','Himalayan','Continental GT 650'],
-  'bike|Honda': ['Activa 6G','Shine','Unicorn','SP125','CB350','Hornet 2.0'],
-  'bike|Yamaha': ['FZ-S','R15','MT-15','Fascino','Ray ZR'],
-  'bike|Bajaj': ['Pulsar 150','Pulsar NS200','Platina','CT100','Dominar 400','Avenger'],
-  'bike|TVS': ['Apache RTR 160','Jupiter','Ntorq 125','Raider 125','Sport'],
-  'bike|Hero': ['Splendor Plus','HF Deluxe','Passion Pro','Glamour','Xtreme 160R'],
-  'bike|KTM': ['Duke 200','Duke 390','RC 200','RC 390'],
-  'bike|Suzuki': ['Access 125','Gixxer','Gixxer SF','Burgman Street'],
-  'bike|Kawasaki': ['Ninja 300','Ninja 650','Z650'],
-  'bike|Triumph': ['Speed 400','Scrambler 400X'],
-
-  'tractor|Mahindra': ['265 DI','475 DI','575 DI','585 DI','Jivo 245'],
-  'tractor|Swaraj': ['724 XT','735 FE','744 FE','855 FE'],
-  'tractor|Sonalika': ['DI 745 III','DI 750 III','DI 60'],
-  'tractor|TAFE': ['TAFE 45 DI','TAFE 5900'],
-  'tractor|Massey Ferguson': ['MF 241 DI','MF 1035 DI','MF 9500'],
-  'tractor|Eicher': ['Eicher 380','Eicher 485','Eicher 551'],
-  'tractor|John Deere': ['5050 D','5310','5210'],
-  'tractor|New Holland': ['3630 TX','3600-2 TX Plus'],
-  'tractor|Powertrac': ['Euro 50','434 Plus'],
-  'tractor|Farmtrac': ['45 Smart','60 Powermaxx'],
-};
-
-function populateMakeOptions(type) {
-  const makes = MAKES_BY_TYPE[type] || [];
-  const sel = $('av_make');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">Select make</option>' + makes.map(m => `<option value="${m}">${m}</option>`).join('');
-  populateModelOptions();
-}
-
-function populateModelOptions() {
-  const type = document.querySelector('#vtRow .vt-b.sel')?.dataset.type || 'car';
-  const make = $('av_make')?.value || '';
-  const modelSel = $('av_model_select');
-  const modelInput = $('av_model');
-  if (!modelSel || !modelInput) return;
-
-  const models = MODELS_BY_MAKE[`${type}|${make}`] || [];
-
-  if (!make) {
-    modelSel.innerHTML = '<option value="">Select make first</option>';
-    modelSel.disabled = true;
-  } else {
-    modelSel.disabled = false;
-    modelSel.innerHTML = '<option value="">Select model</option>' +
-      models.map(m => `<option value="${m}">${m}</option>`).join('') +
-      '<option value="__other__">Other (type manually)</option>';
-  }
-  modelInput.style.display = 'none';
-  modelInput.value = '';
-  handleModelSelect();
-}
-
-function handleModelSelect() {
-  const modelSel = $('av_model_select');
-  const modelInput = $('av_model');
-  if (!modelSel || !modelInput) return;
-  if (modelSel.value === '__other__') {
-    modelInput.style.display = 'block';
-    modelInput.focus();
-  } else {
-    modelInput.style.display = 'none';
-    modelInput.value = modelSel.value;
-  }
-}
-
-function $(id) { return document.getElementById(id); }
-function readingUnit(type) { return type === 'tractor' ? 'hrs' : 'km'; }
-function fmtReading(n, type) { return n != null ? Number(n).toLocaleString() + ' ' + readingUnit(type) : '—'; }
-function fmtKm(n) { return fmtReading(n, 'car'); }
-function fmtDate(d) { return d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'; }
-function initials(u) { return ((u.first_name?.[0] || '') + (u.last_name?.[0] || '')).toUpperCase() || '?'; }
-function vehicleIcon(type) { return type === 'bike' ? '🏍' : type === 'tractor' ? '🚜' : '🚗'; }
-function vehicleLabel(type) { return type === 'bike' ? 'Bike' : type === 'tractor' ? 'Tractor' : 'Car'; }
-
-function showToast(msg, type = 'success') {
-  const t = $('toast');
-  t.textContent = (type === 'success' ? '✓  ' : '✕  ') + msg;
-  t.className = `toast ${type}`;
-  t.classList.remove('hidden');
-  setTimeout(() => t.classList.add('hidden'), 3500);
-}
-function setLoading(id, on, txt) {
-  const b = $(id); if (!b) return;
-  b.disabled = on; if (txt) b.textContent = on ? 'Please wait…' : txt;
-}
-function showError(id, msg) { const e = $(id); if (e) { e.textContent = msg; e.classList.remove('hidden'); } }
-function hideError(id)      { const e = $(id); if (e) e.classList.add('hidden'); }
-
-// ── AUTH ──────────────────────────────────────────────────────────────────
-function goPage(id) {
-  document.querySelectorAll('.auth-page').forEach(p => p.classList.remove('active'));
-  $(id).classList.add('active');
-}
-function logout() {
-  api.clearToken(); STATE.user = null; STATE.vehicles = [];
-  sessionStorage.removeItem('rt_view');
-  sessionStorage.removeItem('rt_vehicle_id');
-  $('P_app').classList.remove('active'); goPage('P_login');
-}
-
-function toggleLoginPassword() {
-  const input = $('li_pass');
-  const btn = $('li_pass_toggle');
-  if (!input || !btn) return;
-  const showing = input.type === 'text';
-  input.type = showing ? 'password' : 'text';
-  btn.textContent = showing ? 'Show' : 'Hide';
-}
-
-async function login() {
-  hideError('loginError');
-  const email = $('li_email').value.trim(), pass = $('li_pass').value;
-  if (!email || !pass) return showError('loginError', 'Please enter email and password.');
-  setLoading('loginBtn', true, 'Sign in →');
-  try {
-    const d = await api.login(email, pass);
-    api.setToken(d.token); STATE.user = d.user; await bootApp();
-  } catch (e) { showError('loginError', 'Email or password is incorrect.'); }
-  finally { setLoading('loginBtn', false, 'Sign in →'); }
-}
-
-async function register() {
-  hideError('registerError');
-  const first = $('r_first').value.trim(), last = $('r_last').value.trim();
-  const email = $('r_email').value.trim(), pass = $('r_pass').value;
-  const phone = $('r_phone')?.value.trim() || '';
-  if (!first || !email || !pass) return showError('registerError', 'First name, email and password are required.');
-  if (pass.length < 8) return showError('registerError', 'Password must be at least 8 characters.');
-  try {
-    await api.register({ first_name: first, last_name: last, email, phone: phone || null, password: pass, notify_email: true, notify_whatsapp: !!phone });
-    api.clearToken();
-    $('li_email').value = email;
-    $('li_pass').value = '';
-    ['r_first', 'r_last', 'r_email', 'r_pass'].forEach(id => { if ($(id)) $(id).value = ''; });
-    goPage('P_login');
-    showToast('Account created. Please sign in to continue.');
-  } catch (e) { showError('registerError', e.message || 'Registration failed.'); }
-}
-
-// ── BOOT ──────────────────────────────────────────────────────────────────
-async function bootApp() {
-  hydrateUser(STATE.user);
-  $('P_login').classList.remove('active'); $('P_register').classList.remove('active');
-  $('P_app').classList.add('active');
-  await Promise.all([loadVehicles(), loadDashboard(), loadNotifBadge()]);
-  fillProfileForm();
-  restoreAppView();
-}
-
-function hydrateUser(u) {
-  const av = initials(u);
-  ['SB_AV', 'PR_AV'].forEach(id => { const e = $(id); if (e) e.textContent = av; });
-  $('SB_NAME').textContent = `${u.first_name} ${u.last_name || ''}`.trim();
-  $('SB_EMAIL').textContent = u.email;
-  $('PR_NAME').textContent  = `${u.first_name} ${u.last_name || ''}`.trim();
-  $('PR_EMAIL').textContent = u.email;
-}
-
-// ── NAV ───────────────────────────────────────────────────────────────────
-const VTITLES = {
-  dashboard: 'Dashboard', vehicles: 'My Vehicles', vehicleDetail: 'Vehicle Detail',
-  servicelog: 'Service Log', upcoming: 'Upcoming Services', notifications: 'Notifications',
-  alerts: 'Alert Settings', addVehicle: 'Add Vehicle', profile: 'Profile & Settings', contactus: 'Contact Us',
-};
-
-function nav(el) {
-  if (!el) return;
-  const id = el.getAttribute('data-view');
-  if (!id) return;
-  sessionStorage.setItem('rt_view', id);
-  sessionStorage.removeItem('rt_vehicle_id');
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  const v = $('V_' + id);
-  if (v) { v.classList.add('active'); v.classList.add('fu'); setTimeout(() => v.classList.remove('fu'), 400); }
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  el.classList.add('active');
-  $('TB_TITLE').textContent = VTITLES[id] || id;
-  if (id === 'vehicles')      loadVehiclesView();
-  if (id === 'servicelog')    loadServiceLog();
-  if (id === 'upcoming')      loadUpcoming();
-  if (id === 'notifications') loadNotifications('');
-  if (id === 'profile')       fillProfileForm();
-  if (id === 'alerts')        fillAlertSettings();
-  if (id === 'addVehicle')    populateMakeOptions(document.querySelector('#vtRow .vt-b.sel')?.dataset.type || 'car');
-  if (id === 'contactus')     fillContactForm();
-}
-
-function restoreAppView() {
-  const savedView = sessionStorage.getItem('rt_view');
-  const savedVehicleId = sessionStorage.getItem('rt_vehicle_id');
-  if (savedView === 'vehicleDetail' && savedVehicleId) {
-    openVehicleDetail(savedVehicleId);
-    return;
-  }
-  if (savedView && savedView !== 'dashboard') {
-    const el = document.querySelector(`[data-view="${savedView}"]`);
-    if (el) nav(el);
-  }
-}
-
-async function loadNotifBadge() {
-  try {
-    const d = await api.getUpcoming();
-    const c = (d.upcoming || []).filter(u => u.status === 'overdue' || u.status === 'urgent').length;
-    ['NB', 'TOP_NB'].forEach(id => {
-      const el = $(id);
-      if (el) el.classList.toggle('hidden', c === 0);
-    });
-  } catch (e) {}
-}
 
 // ── ODOMETER PREDICTIONS MODAL ────────────────────────────────────────────
 const PRED_CHECKS = [
@@ -324,109 +86,14 @@ function openPredModal(km, type, vehicleName) {
   el.addEventListener('click', e => { if (e.target === el) el.remove(); });
 }
 
-// ── DASHBOARD ─────────────────────────────────────────────────────────────
-async function loadDashboard() {
-  try {
-    const [vData, upData, notifData, svcData] = await Promise.all([
-      api.getVehicles(), api.getUpcoming(), api.getNotifications(), api.getServices()
-    ]);
-    const vehicles = vData.vehicles || [], upcoming = upData.upcoming || [];
-    const notifs = notifData.notifications || [], services = svcData.records || [];
-    const overdue = upcoming.filter(u => u.status === 'overdue').length;
-    const dueSoon = upcoming.filter(u => u.status === 'warning' || u.status === 'urgent').length;
-
-    $('dashStats').innerHTML = `
-      <div class="sc"><div class="sc-accent" style="background:var(--accent)"></div><div class="sc-label">Total Vehicles</div><div class="sc-val">${vehicles.length}</div><div class="sc-sub">${vehicles.filter(v=>v.type==='car').length} Cars · ${vehicles.filter(v=>v.type==='bike').length} Bikes · ${vehicles.filter(v=>v.type==='tractor').length} Tractors</div></div>
-      <div class="sc"><div class="sc-accent" style="background:var(--red)"></div><div class="sc-label">Overdue</div><div class="sc-val">${overdue}</div><div class="sc-sub">Action required now</div></div>
-      <div class="sc"><div class="sc-accent" style="background:var(--amber)"></div><div class="sc-label">Due Soon</div><div class="sc-val">${dueSoon}</div><div class="sc-sub">Schedule soon</div></div>
-      <div class="sc"><div class="sc-accent" style="background:var(--green)"></div><div class="sc-label">Services Done</div><div class="sc-val">${services.length}</div><div class="sc-sub">Total logged</div></div>`;
-
-    if (overdue > 0) {
-      $('alertTitle').textContent = `${overdue} service${overdue > 1 ? 's' : ''} overdue!`;
-      $('alertMsg').textContent = upcoming.filter(u => u.status === 'overdue').slice(0, 2).map(u => `${u.vehicleName} — ${u.service_name}`).join(' · ');
-      $('alertStrip').classList.remove('hidden');
-    }
-
-    $('dashUpcoming').innerHTML = upcoming.slice(0, 5).map(upRow).join('') || '<div class="loading-row">All services up to date ✓</div>';
-    $('dashAlerts').innerHTML = notifs.slice(0, 4).map(n => `
-      <div class="up-item">
-        <div class="up-ico" style="background:${n.type==='overdue'?'var(--red-dim)':n.type==='completion'?'var(--green-dim)':'var(--amber-dim)'}">
-          ${n.type==='overdue'?'🚨':n.type==='completion'?'✅':'⚠'}
-        </div>
-        <div class="up-info">
-          <div class="up-svc">${n.service_name || 'Notification'}</div>
-          <div class="up-veh"><span class="ni-channel ch-em">✉ Email</span> · ${fmtDate(n.sent_at || n.created_at)}</div>
-        </div>
-      </div>`).join('') || '<div class="loading-row">No alerts yet</div>';
-
-    $('dashVehicles').innerHTML = vehicles.map(vehicleCard).join('');
-  } catch (e) { console.error('Dashboard error:', e); }
-}
-
-function upRow(u) {
-  const ico = u.service_name?.toLowerCase().includes('oil') ? '🛢' : u.service_name?.toLowerCase().includes('brake') ? '🔵' : u.service_name?.toLowerCase().includes('air') ? '🌬' : u.service_name?.toLowerCase().includes('chain') ? '⛓' : '🔧';
-  const cls = u.status === 'overdue' ? 'due-red' : u.status === 'urgent' ? 'due-warn' : 'due-ok';
-  const unit = u.unit || readingUnit(u.vehicleType);
-  const lbl = u.status === 'overdue' ? 'Overdue' : u.kmLeft != null ? `${u.kmLeft} ${unit} left` : 'Due soon';
-  const bg  = u.status === 'overdue' ? 'var(--red-dim)' : u.status === 'urgent' ? 'var(--amber-dim)' : 'var(--green-dim)';
-  return `<div class="up-item"><div class="up-ico" style="background:${bg}">${ico}</div><div class="up-info"><div class="up-svc">${u.service_name}</div><div class="up-veh">${u.vehicleName}</div></div><div class="up-due ${cls}">${lbl}</div></div>`;
-}
-
-// ── VEHICLES ──────────────────────────────────────────────────────────────
-async function loadVehicles() {
-  try { const d = await api.getVehicles(); STATE.vehicles = d.vehicles || []; populateSelects(); } catch (e) {}
-}
-
-function populateSelects() {
-  const opts = STATE.vehicles.map(v => `<option value="${v.id}">${v.make} ${v.model} (${v.registration || v.year})</option>`).join('');
-  const s = $('log_vehicle'); if (s) s.innerHTML = '<option value="">Select vehicle</option>' + opts;
-  const f = $('filterVehicle'); if (f) f.innerHTML = '<option value="">All Vehicles</option>' + opts;
-}
-
-function vehicleCard(v) {
-  const emoji = vehicleIcon(v.type);
-  const bg = v.type === 'bike'
-    ? 'linear-gradient(135deg,#ECFEFF,#CFFAFE)'
-    : v.type === 'tractor' ? 'linear-gradient(135deg,#F0FDF4,#DCFCE7)' : 'linear-gradient(135deg,#EFF6FF,#DBEAFE)';
-  return `<div class="vh-card" onclick="openVehicleDetail('${v.id}')">
-    <div class="vh-img" style="background:${bg}">
-      <div class="vh-emoji">${emoji}</div>
-      <div class="vh-badge-type">${vehicleLabel(v.type)} · ${v.fuel_type}</div>
-      <div class="vh-sdot sdot-warn"></div>
-    </div>
-    <div class="vh-body">
-      <div class="vh-name">${v.make} ${v.model}</div>
-      <div class="vh-sub">${v.year} · ${v.registration || '—'} · ${fmtReading(v.current_km, v.type)}</div>
-      <div class="vh-pills">
-        <span class="pill pill-ok">${v.fuel_type}</span>
-        <span class="pill pill-ok">${v.transmission || 'Manual'}</span>
-      </div>
-    </div>
-  </div>`;
-}
-
-async function loadVehiclesView() {
-  await loadVehicles();
-  const el = $('vehiclesList'); if (!el) return;
-  if (!STATE.vehicles.length) {
-    el.innerHTML = `<div class="empty-state"><div class="es-icon">🚗</div><p>No vehicles yet.</p></div>
-      <div class="add-card" onclick="nav(document.querySelector('[data-view=addVehicle]'))"><div style="font-size:2rem;margin-bottom:8px">＋</div><div style="font-size:0.85rem;font-weight:500">Add your first vehicle</div></div>`;
-    return;
-  }
-  el.innerHTML = STATE.vehicles.map(vehicleCard).join('') +
-    `<div class="add-card" onclick="nav(document.querySelector('[data-view=addVehicle]'))"><div style="font-size:2rem;margin-bottom:8px">＋</div><div style="font-size:0.85rem;font-weight:500">Add new vehicle</div></div>`;
-}
-
 // ── VEHICLE DETAIL ────────────────────────────────────────────────────────
+function currentVehicleId() {
+  return new URLSearchParams(window.location.search).get('id');
+}
+
 async function openVehicleDetail(id) {
   STATE.currentVehicleId = id;
-  sessionStorage.setItem('rt_view', 'vehicleDetail');
-  sessionStorage.setItem('rt_vehicle_id', id);
   $('VD_CONTENT').innerHTML = '<div class="loading-row" style="padding:3rem;text-align:center">Loading vehicle data…</div>';
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  $('V_vehicleDetail').classList.add('active');
-  $('TB_TITLE').textContent = 'Vehicle Detail';
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
   try {
     const data = await api.getHealth(id);
@@ -486,7 +153,6 @@ async function openVehicleDetail(id) {
 
       <div class="sec-title">Service Tracking <span style="font-size:11px;color:var(--text4);font-weight:500">${svcs.length} services</span></div>
 
-      <!-- ✏ Editable note banner -->
       <div class="svc-edit-note">
         ✏️ <strong>Oil grade and quantity are pre-filled from manufacturer defaults.</strong>
         Your vehicle may use a different spec or capacity — click the <span class="svc-edit-badge">✏ Edit</span> button on any card to update the oil grade and quantity for that service.<br>
@@ -513,14 +179,11 @@ async function openVehicleDetail(id) {
         : s.kmLeft < 1500? `<span style="color:var(--amber);font-weight:700">${s.kmLeft.toLocaleString()} ${unit} left</span>`
         :                  `<span style="color:var(--green);font-weight:700">${s.kmLeft.toLocaleString()} ${unit} left</span>`;
 
-      // Safe IDs for inline editing — custom services use custom_service_id instead of catalogue_id
       const isCustom = !!s.isCustom;
       const idRaw = isCustom ? s.custom_service_id : s.catalogue_id;
       const safeId = idRaw ? idRaw.replace(/-/g,'') : 'x';
       const refId  = isCustom ? `custom:${s.custom_service_id}` : s.catalogue_id;
 
-      // Per-service tracking toggle — enabled by default; when off, dues still show
-      // but no email alert is sent for this service (handled server-side).
       const trackingOn = s.trackingEnabled !== false;
       html += `
         <div class="svc-card" style="border-left:4px solid ${bcolor}" id="svc-card-${safeId}">
@@ -544,7 +207,6 @@ async function openVehicleDetail(id) {
             <div class="r"><span class="rk">Next due at</span><span class="rv">${s.nextDueKm ? fmtReading(s.nextDueKm, v.type) : '—'}</span></div>
             <div class="r"><span class="rk">Remaining (${unit})</span><span class="rv">${leftTxt}</span></div>
             ${s.daysLeft != null ? `<div class="r"><span class="rk">Remaining (time)</span><span class="rv">${
-              // Colour daysLeft based on WORST status (km overdue overrides days green)
               s.daysLeft < 0
                 ? '<span style="color:var(--red);font-weight:800">' + Math.abs(s.daysLeft) + ' days overdue</span>'
                 : s.status === 'overdue' || s.status === 'urgent' || s.daysLeft <= 7
@@ -552,7 +214,6 @@ async function openVehicleDetail(id) {
                   : '<span style="color:var(--green);font-weight:700">' + s.daysLeft + ' days left</span>'
             }</span></div>` : ''}
 
-            <!-- Spec row — individual inline edit -->
             <div class="r" id="spec-row-${safeId}">
               <span class="rk">Oil / Fluid spec</span>
               <span class="ied-view" id="spec-view-${safeId}">
@@ -566,7 +227,6 @@ async function openVehicleDetail(id) {
               </span>
             </div>
 
-            <!-- Qty row — individual inline edit -->
             <div class="r" id="qty-row-${safeId}">
               <span class="rk">Quantity</span>
               <span class="ied-view" id="qty-view-${safeId}">
@@ -594,17 +254,13 @@ async function openVehicleDetail(id) {
   }
 }
 
-
 // ── INLINE SPEC / QTY EDIT ────────────────────────────────────────────────
-
 function startInlineEdit(field, safeId, vehicleId, catalogueId) {
-  // Hide display, show input
   const view  = document.getElementById(`${field}-view-${safeId}`);
   const edit  = document.getElementById(`${field}-edit-${safeId}`);
   const input = document.getElementById(`ied-${field}-${safeId}`);
   if (!view || !edit || !input) return;
 
-  // Get current displayed value to pre-fill (always fresh from DOM)
   const valEl = document.getElementById(`${field}-val-${safeId}`);
   const current = valEl?.textContent?.trim() || '';
   input.value = current === '—' ? '' : current;
@@ -702,6 +358,7 @@ async function saveInlineField(field, safeId, vehicleId, refId) {
   }
 }
 
+// ── CUSTOM SERVICE MODAL ──────────────────────────────────────────────────
 let _csVehicleId = null;
 
 function openCustomServiceModal(vehicleId) {
@@ -760,7 +417,6 @@ async function deleteCustomService(vehicleId, customId, name) {
   }
 }
 
-
 // ── SET INTERVALS MODAL ───────────────────────────────────────────────────
 let _intVehicleId = null;
 
@@ -775,16 +431,13 @@ function openIntervalModal(vehicleId) {
     return;
   }
 
-  // Priority icons
   const priIco = { critical: '🔴', high: '🟠', normal: '🟢', low: '⚪' };
 
-  // Month options dropdown
   const moOpts = (cur) => [1,2,3,4,5,6,8,10,12,18,24,36].map(m =>
     `<option value="${m}" ${parseInt(cur) === m ? 'selected' : ''}>${m} month${m > 1 ? 's' : ''}</option>`
   ).join('');
 
   const rows = svcs.map((s, i) => {
-    // Show default value as placeholder hint
     const defKm = s.default_interval_km || s.interval_km;
     const defMo = s.default_interval_months || s.interval_months;
     const defLabel = [defKm ? defKm.toLocaleString() + ' ' + unit : '', defMo ? defMo + ' mo' : ''].filter(Boolean).join(' / ') || 'No default';
@@ -841,8 +494,8 @@ async function saveIntervals() {
     const moVal  = parseInt(moEl?.value) || null;
     const catId  = kmEl.dataset.catalogueId;
 
-    if (!catId) { failed++; continue; }   // skip if no catalogue_id
-    if (!kmVal && !moVal) continue;        // nothing entered — skip
+    if (!catId) { failed++; continue; }
+    if (!kmVal && !moVal) continue;
 
     try {
       const res = await fetch(window.location.origin + `/api/vehicles/${_intVehicleId}/intervals`, {
@@ -853,7 +506,6 @@ async function saveIntervals() {
       const data = await res.json();
       if (data.success) {
         saved++;
-        // Visual confirmation on the row
         const row = $(`int-row-${i}`);
         if (row) row.style.background = 'var(--green-dim, rgba(22,163,74,0.06))';
       } else { failed++; }
@@ -871,141 +523,7 @@ async function saveIntervals() {
   }
 }
 
-// ── ADD VEHICLE ───────────────────────────────────────────────────────────
-function selVT(el) {
-  el.closest('.vt-row').querySelectorAll('.vt-b').forEach(b => b.classList.remove('sel'));
-  el.classList.add('sel');
-  populateMakeOptions(el.dataset.type);
-}
-
-async function addVehicle() {
-  hideError('avError');
-  const type  = document.querySelector('#vtRow .vt-b.sel')?.dataset.type || 'car';
-  const make  = $('av_make').value, model = $('av_model').value.trim();
-  const year  = parseInt($('av_year').value), fuel = $('av_fuel').value;
-  const reg   = $('av_reg').value.trim(), km = parseInt($('av_km').value) || 0;
-  const cc    = $('av_cc').value.trim(), tx = $('av_tx').value;
-  if (!make || !model) return showError('avError', 'Make and model are required.');
-  setLoading('avBtn', true);
-  try {
-    await api.addVehicle({ type, make, model, year, fuel_type: fuel, registration: reg, current_km: km, engine_cc: cc, transmission: tx });
-    showToast('Vehicle added! Service schedule generated.');
-    await Promise.all([loadVehicles(), loadDashboard(), loadNotifBadge()]);
-    $('av_model').value = ''; $('av_reg').value = ''; $('av_km').value = '';
-    nav(document.querySelector('[data-view=vehicles]'));
-  } catch (e) { showError('avError', e.message || 'Failed to add vehicle.'); }
-  finally { setLoading('avBtn', false); $('avBtn').textContent = 'Add Vehicle & Generate Service Schedule →'; }
-}
-
-// ── SERVICE LOG ───────────────────────────────────────────────────────────
-async function loadServiceLog() {
-  const vid = $('filterVehicle')?.value || '';
-  const body = $('serviceLogBody'); if (!body) return;
-  body.innerHTML = '<div class="loading-row">Loading...</div>';
-  try {
-    const data = await api.getServices(vid || null);
-    const rows = data.records || [];
-    const totalCostEl = $('svcLogTotalCost');
-    if (!rows.length) {
-      body.innerHTML = '<div class="loading-row">No service records yet.</div>';
-      if (totalCostEl) totalCostEl.textContent = '';
-      return;
-    }
-    const totalCost = rows.reduce((sum, r) => sum + (parseFloat(r.cost) || 0), 0);
-    if (totalCostEl) totalCostEl.textContent = `Total spent: ₹${totalCost.toLocaleString()}`;
-
-    body.innerHTML = rows.map(r => `
-      <div class="st-row">
-        <div class="st-cell" data-label="Service"><div class="st-svc">${r.service_name}</div><div class="st-det">${r.spec_used || '—'}</div></div>
-        <div class="st-cell" data-label="Vehicle" style="font-size:0.83rem;color:var(--text2)">${r.make || ''} ${r.model || ''}</div>
-        <div class="st-cell" data-label="Date" style="font-size:0.82rem;color:var(--text3)">${fmtDate(r.done_at)}</div>
-        <div class="st-cell" data-label="Reading" style="font-size:0.85rem;font-weight:700">${fmtReading(r.done_km, r.vehicle_type)}</div>
-        <div class="st-cell" data-label="Cost" style="font-size:0.85rem;font-weight:700;color:var(--text2)">${r.cost ? '₹' + Number(r.cost).toLocaleString() : '—'}</div>
-        <div class="st-cell" data-label="Status"><span class="badge b-ok"><span class="b-dot"></span>Done</span></div>
-        <div class="st-cell" data-label="Next Due" style="font-size:0.82rem;color:var(--green);font-weight:700">${r.next_due_km ? fmtReading(r.next_due_km, r.vehicle_type) : '—'}</div>
-      </div>`).join('');
-  } catch (e) { body.innerHTML = `<div class="loading-row">Error: ${e.message}</div>`; }
-}
-
-async function downloadServiceLogPdf() {
-  const vid = $('filterVehicle')?.value || '';
-  try {
-    const res = await fetch(`${window.location.origin}/api/services/pdf${vid ? '?vehicle_id=' + vid : ''}`, {
-      headers: { 'Authorization': 'Bearer ' + api.getToken() },
-    });
-    if (!res.ok) throw new Error('Could not generate PDF');
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'service-log.pdf';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  } catch (e) {
-    showToast('Failed to download PDF: ' + e.message, 'error');
-  }
-}
-
-// ── UPCOMING ──────────────────────────────────────────────────────────────
-async function loadUpcoming() {
-  const el = $('upcomingList'); if (!el) return;
-  el.innerHTML = '<div class="loading-row">Loading...</div>';
-  try {
-    const data = await api.getUpcoming(); const list = data.upcoming || [];
-    if (!list.length) { el.innerHTML = '<div class="empty-state"><div class="es-icon">✅</div><p>All vehicles up to date!</p></div>'; return; }
-    el.innerHTML = list.map(u => {
-      const cls = u.status === 'overdue' ? 'ni-due' : u.status === 'urgent' || u.status === 'warning' ? 'ni-warn' : '';
-      const ico = u.status === 'overdue' ? '🚨' : '⚠';
-      const unit = u.unit || readingUnit(u.vehicleType);
-      const lbl = u.status === 'overdue' ? `Overdue by ${Math.abs(u.kmLeft)} ${unit}` : u.kmLeft != null ? `${u.kmLeft} ${unit} left` : 'Due soon';
-      return `<div class="ni-item ${cls}" style="margin-bottom:8px">
-        <div class="ni-ico" style="background:${u.status==='overdue'?'var(--red-dim)':'var(--amber-dim)'}">${ico}</div>
-        <div style="flex:1">
-          <div class="ni-title">${u.service_name} — ${u.vehicleName}</div>
-          <div class="ni-msg">${u.registration || ''} · Current: ${fmtReading(u.currentKm, u.vehicleType)} · Due at: ${fmtReading(u.nextDueKm, u.vehicleType)} · <strong>${lbl}</strong><br>Spec: ${u.spec || 'Per manufacturer'} · Qty: ${u.qty || '—'}</div>
-          <div class="ni-meta"><span class="ni-time">Priority: ${u.priority || 'normal'}</span></div>
-        </div>
-      </div>`;
-    }).join('');
-  } catch (e) { el.innerHTML = `<div class="loading-row">Error: ${e.message}</div>`; }
-}
-
-// ── NOTIFICATIONS ─────────────────────────────────────────────────────────
-async function loadNotifications(type) {
-  const el = $('notifList'); if (!el) return;
-  el.innerHTML = '<div class="loading-row">Loading...</div>';
-  try {
-    const data = await api.getNotifications(type || null); const list = data.notifications || [];
-    if (!list.length) { el.innerHTML = '<div class="empty-state"><div class="es-icon">🔔</div><p>No notifications yet.</p></div>'; return; }
-    el.innerHTML = list.map(n => {
-      const cls = n.type === 'overdue' ? 'ni-due' : n.type === 'warning' || n.type === 'urgent' ? 'ni-warn' : n.type === 'completion' ? 'ni-ok' : '';
-      const ico = { overdue: '🚨', completion: '✅', welcome: '👋', digest: '📊', warning: '⚠', urgent: '🚨' }[n.type] || '🔔';
-      const sc  = n.status === 'sent' ? 'var(--green)' : n.status === 'failed' ? 'var(--red)' : 'var(--amber)';
-      return `<div class="ni-item ${cls}">
-        <div class="ni-ico" style="background:var(--${n.type==='overdue'?'red':n.type==='completion'?'green':'amber'}-dim)">${ico}</div>
-        <div style="flex:1">
-          <div class="ni-title">${n.service_name || 'Notification'}${n.make ? ' — ' + n.make + ' ' + n.model : ''}</div>
-          <div class="ni-msg">Sent to: ${n.recipient || '—'}</div>
-          <div class="ni-meta">
-            <span class="ni-time">${fmtDate(n.sent_at || n.created_at)}</span>
-            <span class="ni-channel ch-em">✉ Email</span>
-            <span style="font-size:10px;color:${sc};font-weight:700">${n.status}</span>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-  } catch (e) { el.innerHTML = `<div class="loading-row">Error: ${e.message}</div>`; }
-}
-
-function filterNotifs(type, el) {
-  document.querySelectorAll('.nt').forEach(t => t.classList.remove('active'));
-  el.classList.add('active'); loadNotifications(type);
-}
-
 // ── LOG SERVICE MODAL ─────────────────────────────────────────────────────
-function openLogModal() { $('log_date').value = new Date().toISOString().split('T')[0]; $('MODAL_LOG').classList.add('open'); }
 function openLogModalFor(vid) { $('log_date').value = new Date().toISOString().split('T')[0]; $('log_vehicle').value = vid; loadCatalogueForVehicle(); $('MODAL_LOG').classList.add('open'); }
 
 async function loadCatalogueForVehicle() {
@@ -1051,11 +569,9 @@ async function logService() {
     await api.logService({ vehicle_id: vid, catalogue_id, custom_service_id, service_name: svcName, done_at: date, done_km: km, spec_used: spec, cost, workshop: ws, notes });
     closeModal('MODAL_LOG');
     showToast('Service logged! Email confirmation sent.');
-    await Promise.all([loadVehicles(), loadDashboard(), loadNotifBadge()]);
-    if ($('V_servicelog').classList.contains('active')) await loadServiceLog();
-    if ($('V_upcoming').classList.contains('active')) await loadUpcoming();
-    if ($('V_vehicles').classList.contains('active')) await loadVehiclesView();
-    if ($('V_vehicleDetail').classList.contains('active') && STATE.currentVehicleId) await openVehicleDetail(STATE.currentVehicleId);
+    await loadVehicles();
+    loadNotifBadge();
+    if (STATE.currentVehicleId) await openVehicleDetail(STATE.currentVehicleId);
   } catch (e) { showError('logError', e.message || 'Failed to log service.'); }
   finally { setLoading('logBtn', false); $('logBtn').textContent = 'Log Service →'; }
 }
@@ -1079,31 +595,15 @@ async function saveKm() {
   if (!km || km < 0) return;
 
   try {
-      await api.updateVehicle(_kmVehicleId, {
-          current_km: km
-      });
+    await api.updateVehicle(_kmVehicleId, { current_km: km });
+    closeModal('MODAL_KM');
+    showToast(`${readingUnit(_kmVehicleType).toUpperCase()} reading updated.`);
 
-      closeModal('MODAL_KM');
-      showToast(`${readingUnit(_kmVehicleType).toUpperCase()} reading updated.`);
-
-      // Update vehicles once
-      await loadVehicles();
-
-      // Everything else runs in background
-      loadDashboard();
-      loadNotifBadge();
-
-      if ($('V_upcoming').classList.contains('active'))
-          loadUpcoming();
-
-      if ($('V_vehicles').classList.contains('active'))
-          loadVehiclesView();
-
-      if (STATE.currentVehicleId)
-          openVehicleDetail(STATE.currentVehicleId);
-
+    await loadVehicles();
+    loadNotifBadge();
+    if (STATE.currentVehicleId) openVehicleDetail(STATE.currentVehicleId);
   } catch (e) {
-      showToast(e.message, 'error');
+    showToast(e.message, 'error');
   }
 }
 
@@ -1119,183 +619,16 @@ async function resyncVehicle(id) {
 // ── DELETE VEHICLE ────────────────────────────────────────────────────────
 function confirmDeleteVehicle(id, name) {
   if (confirm(`Remove ${name} from RevTrack? All service records will also be removed.`)) {
-    api.deleteVehicle(id).then(() => { showToast('Vehicle removed.'); loadVehicles(); nav(document.querySelector('[data-view=vehicles]')); }).catch(e => showToast(e.message, 'error'));
+    api.deleteVehicle(id)
+      .then(() => { showToast('Vehicle removed.'); window.location.href = 'vehicles.html'; })
+      .catch(e => showToast(e.message, 'error'));
   }
-}
-
-// ── PROFILE ───────────────────────────────────────────────────────────────
-function fillProfileForm() {
-  if (!STATE.user) return; const u = STATE.user;
-  $('pf_first').value = u.first_name || '';
-  $('pf_last').value  = u.last_name  || '';
-  $('pf_email').value = u.email      || '';
-  if ($('pf_phone')) $('pf_phone').value = u.phone || '';
-  $('pf_em_toggle').classList.toggle('on', u.notify_email !== false);
-  $('ps_vehicles').textContent = STATE.vehicles.length;
-  fillAlertSettings();
-}
-
-function fillContactForm() {
-  if (!STATE.user) return;
-  if ($('cu_email')) $('cu_email').value = STATE.user.email || '';
-}
-
-async function sendContactMessage() {
-  hideError('cuError');
-  const subject = $('cu_subject').value.trim();
-  const message = $('cu_message').value.trim();
-  if (!subject || !message) return showError('cuError', 'Please fill in both subject and message.');
-  setLoading('cuBtn', true);
-  try {
-    await api.contactUs({ subject, message });
-    showToast('Message sent! Thanks for the feedback.');
-    $('cu_subject').value = '';
-    $('cu_message').value = '';
-  } catch (e) {
-    showError('cuError', e.message || 'Failed to send message.');
-  } finally {
-    setLoading('cuBtn', false); $('cuBtn').textContent = 'Send Message →';
-  }
-}
-
-async function toggleProfileEmail(el) {
-  const next = !el.classList.contains('on');
-  el.classList.toggle('on', next);
-  try {
-    const data = await api.updateProfile({
-      first_name: $('pf_first').value.trim() || STATE.user.first_name,
-      last_name: $('pf_last').value.trim() || '',
-      notify_email: next,
-      warn_days: STATE.user.warn_days || 7,
-      urgent_days: 10,
-      warn_km: STATE.user.warn_km || 100,
-      ...getAlertSettings(),
-    });
-    STATE.user = data.user;
-    showToast(next ? 'Email alerts enabled.' : 'Email alerts disabled.');
-  } catch (e) {
-    el.classList.toggle('on', !next);
-    showToast(e.message || 'Failed to update email alerts.', 'error');
-  }
-}
-
-async function saveProfile() {
-  hideError('profileError');
-  try {
-    const data = await api.updateProfile({
-      first_name:      $('pf_first').value.trim(),
-      last_name:       $('pf_last').value.trim(),
-      notify_email:    $('pf_em_toggle').classList.contains('on'),
-      notify_whatsapp: !!($('pf_phone')?.value.trim()),
-      phone:           $('pf_phone')?.value.trim() || null,
-      warn_days:       STATE.user.warn_days || 7,
-      urgent_days:     10,
-      warn_km:         STATE.user.warn_km || 100,
-      ...getAlertSettings(),
-    });
-    STATE.user = data.user; hydrateUser(data.user); fillAlertSettings(); showToast('Profile saved.');
-  } catch (e) { showError('profileError', e.message); }
-}
-
-function toggleAlert(el) { el.classList.toggle('on'); }
-
-function getAlertSettings() {
-  return {
-    alert_warning:    $('alert_warning')?.classList.contains('on') ?? true,
-    alert_urgent:     $('alert_urgent')?.classList.contains('on') ?? true,
-    alert_overdue:    $('alert_overdue')?.classList.contains('on') ?? true,
-    alert_completion: $('alert_completion')?.classList.contains('on') ?? true,
-    alert_digest:     $('alert_digest')?.classList.contains('on') ?? false,
-    alert_odometer:   $('alert_odometer')?.classList.contains('on') ?? true,
-  };
-}
-
-function getWarnKmSetting() {
-  const preset = $('warnKmPreset')?.value || '100';
-  const custom = parseInt($('warnKmCustom')?.value, 10);
-  const km = preset === 'custom' ? custom : parseInt(preset, 10);
-  return Math.max(50, km || 100);
-}
-
-function getWarnDaysSetting() {
-  return Math.max(1, parseInt($('warnDays')?.value, 10) || 7);
-}
-
-function handleWarnKmPreset() {
-  const isCustom = $('warnKmPreset')?.value === 'custom';
-  if (!isCustom && $('warnKmCustom')) $('warnKmCustom').value = $('warnKmPreset').value;
-}
-
-function handleWarnKmManual() {
-  const manual = parseInt($('warnKmCustom')?.value, 10);
-  if (!manual) return;
-  const presetValue = String(manual);
-  if ($('warnKmPreset')) {
-    $('warnKmPreset').value = ['100', '250', '500'].includes(presetValue) ? presetValue : 'custom';
-  }
-}
-
-function fillAlertSettings() {
-  if (!STATE.user) return;
-  const u = STATE.user;
-  const warnKm = parseInt(u.warn_km, 10) || 100;
-  const preset = ['100', '250', '500'].includes(String(warnKm)) ? String(warnKm) : 'custom';
-  if ($('warnKmPreset')) $('warnKmPreset').value = preset;
-  if ($('warnKmCustom')) $('warnKmCustom').value = warnKm;
-  if ($('warnDays')) $('warnDays').value = u.warn_days || 7;
-  handleWarnKmPreset();
-
-  const settings = {
-    alert_warning: u.alert_warning !== false,
-    alert_urgent: u.alert_urgent !== false,
-    alert_overdue: u.alert_overdue !== false,
-    alert_completion: u.alert_completion !== false,
-    alert_digest: u.alert_digest === true,
-    alert_odometer: u.alert_odometer !== false,
-  };
-  Object.entries(settings).forEach(([id, on]) => {
-    const el = $(id);
-    if (el) el.classList.toggle('on', on);
-  });
-}
-
-async function saveAlertSettings() {
-  if (!STATE.user) return;
-  try {
-    const data = await api.updateProfile({
-      first_name: STATE.user.first_name,
-      last_name: STATE.user.last_name || '',
-      notify_email: STATE.user.notify_email !== false,
-      warn_days: getWarnDaysSetting(),
-      urgent_days: 10,
-      warn_km: getWarnKmSetting(),
-      ...getAlertSettings(),
-    });
-    STATE.user = data.user;
-    fillProfileForm();
-    showToast('Alert settings saved.');
-  } catch (e) {
-    showToast(e.message || 'Failed to save alert settings.', 'error');
-  }
-}
-
-// ── MODALS ────────────────────────────────────────────────────────────────
-function closeModal(id) { $(id).classList.remove('open'); hideError('logError'); }
-document.addEventListener('click', e => { if (e.target.classList.contains('overlay')) closeModal(e.target.id); });
-
-// ── SEARCH ────────────────────────────────────────────────────────────────
-function handleSearch(val) {
-  val = val.toLowerCase().trim(); if (!val) return;
-  const m = STATE.vehicles.find(v => `${v.make} ${v.model}`.toLowerCase().includes(val) || (v.registration || '').toLowerCase().includes(val));
-  if (m) openVehicleDetail(m.id);
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
-(async () => {
-  localStorage.removeItem('rt_token');
-  const token = api.getToken();
-  if (token) {
-    try { const d = await api.me(); STATE.user = d.user; await bootApp(); }
-    catch (e) { api.clearToken(); STATE.user = null; goPage('P_login'); }
-  }
-})();
+window.initPage = async function () {
+  const id = currentVehicleId();
+  if (!id) { $('VD_CONTENT').innerHTML = '<div class="empty-state"><p>No vehicle selected. <a href="vehicles.html">Go to My Vehicles</a></p></div>'; return; }
+  await openVehicleDetail(id);
+};
+initAppShell('vehicleDetail');

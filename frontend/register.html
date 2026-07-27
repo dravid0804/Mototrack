@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create account — MotoTrack</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/common.css">
+</head>
+<body>
+
+<div class="auth-page active" id="P_register">
+  <div class="auth-left">
+    <div class="auth-left-bg"></div>
+    <div class="orb orb1"></div><div class="orb orb2"></div>
+    <div class="grid-lines"></div>
+    <div class="auth-left-content">
+      <a class="logo-mark" href="index.html" style="text-decoration:none"><div class="logo-icon">⚙</div>MotoTrack</a>
+      <div class="auth-headline">Set up takes<br><em>2 minutes.</em><br>Savings last years.</div>
+      <div class="auth-sub">Register your vehicles once. MotoTrack auto-calculates every service deadline and alerts you via email.</div>
+      <div class="auth-badges">
+        <div class="auth-badge"><div class="dot" style="background:var(--blue)"></div>Email alerts</div>
+        <div class="auth-badge"><div class="dot" style="background:var(--green)"></div>Free forever</div>
+      </div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="auth-form fu">
+      <h2>Create account</h2>
+      <p class="sub">Free forever. No credit card needed.</p>
+      <div class="form-row">
+        <div class="field"><label>First name</label><input type="text" id="r_first" placeholder="Arjun"></div>
+        <div class="field"><label>Last name</label><input type="text" id="r_last" placeholder="Kumar"></div>
+      </div>
+      <div class="field"><label>Email</label><input type="email" id="r_email" placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="r_pass" placeholder="Min. 8 characters"></div>
+
+      <div class="form-error hidden" id="registerError"></div>
+      <button class="btn-cta" onclick="register()">Create account →</button>
+      <div class="auth-switch">Already have an account? <a href="login.html">Sign in</a></div>
+      <div class="auth-switch"><a href="index.html">← Back to home</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast"></div>
+
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
+<script src="js/register.js"></script>
+</body>
+</html>

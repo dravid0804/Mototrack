@@ -1,0 +1,68 @@
+/* ── common.css — small additive overrides for the multi-page split ─────
+   Loaded AFTER main.css on every app/auth page. Nothing here overrides
+   colors, fonts or component sizing — only fixes needed because several
+   elements that used to be <div onclick> in the single-page app are now
+   real <a href> links between pages. ─────────────────────────────────── */
+
+.nav-item{ text-decoration:none; }
+.sec-title a, .panel-title a, .breadcrumb a{ text-decoration:none; }
+a.btn-prim, a.btn-sec, a.btn-danger, a.add-card{
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+.vh-card{ text-decoration:none; color:inherit; display:block; }
+.up-item[href], .ni-item[href]{ text-decoration:none; color:inherit; cursor:pointer; }
+
+/* ══ Floating "Something to tell us" contact button ═══════════════════
+   Fixed position, sits on top of the layout without affecting flow.
+   Present on every page (added just before </body> or before the toast
+   element); links straight to the Contact Us page. ═══════════════════ */
+.contact-fab{
+  position:fixed;
+  right:22px;
+  bottom:22px;
+  width:56px;
+  height:56px;
+  border-radius:50%;
+  background:var(--accent-grad, var(--accent, #E85D1A));
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 8px 24px rgba(232,93,26,0.35),0 2px 8px rgba(15,23,42,0.18);
+  z-index:150;
+  text-decoration:none;
+  transition:transform 0.2s ease, box-shadow 0.2s ease;
+  cursor:pointer;
+}
+.contact-fab:hover{
+  transform:translateY(-3px) scale(1.06);
+  box-shadow:0 14px 30px rgba(232,93,26,0.45),0 4px 12px rgba(15,23,42,0.22);
+}
+.contact-fab svg{ width:25px; height:25px; display:block; }
+.contact-fab-tooltip{
+  position:absolute;
+  right:68px;
+  top:50%;
+  transform:translateY(-50%);
+  background:#0F172A;
+  color:#fff;
+  font-size:11px;
+  font-weight:700;
+  padding:7px 12px;
+  border-radius:8px;
+  white-space:nowrap;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.2s ease, transform 0.2s ease;
+  box-shadow:0 4px 12px rgba(15,23,42,0.2);
+}
+.contact-fab:hover .contact-fab-tooltip{ opacity:1; }
+@media(max-width:700px){
+  .contact-fab{ right:14px; bottom:14px; width:48px; height:48px; }
+  .contact-fab svg{ width:21px; height:21px; }
+  .contact-fab-tooltip{ display:none; }
+}

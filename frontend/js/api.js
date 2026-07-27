@@ -28,7 +28,7 @@ const api = {
 
     if (res.status === 401) {
       api.clearToken();
-      window.location.reload();
+      window.location.href = 'login.html';
       return;
     }
     if (!data.success) throw new Error(data.message || 'Request failed');

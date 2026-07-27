@@ -6,475 +6,504 @@
 <title>MotoTrack — Vehicle Service Manager</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <link rel="stylesheet" href="css/main.css">
+<style>
+/* ══════════════════════════════════════════════════════════════════════
+   Landing page — self-contained styles (additive, main.css untouched)
+   ══════════════════════════════════════════════════════════════════════ */
+body{background:var(--bg);}
+.hidden{display:none!important;}
+a{color:inherit;}
+
+/* ── Sticky nav ─────────────────────────────────────────────────────── */
+.land-header{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border);}
+.land-nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 3rem;max-width:1280px;margin:0 auto;gap:1.5rem;}
+.land-nav .logo-mark{font-size:1.15rem;font-weight:800;color:var(--text);display:flex;align-items:center;gap:10px;flex-shrink:0;text-decoration:none;}
+.land-nav .logo-icon{width:36px;height:36px;background:var(--accent-grad);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;color:#fff;box-shadow:0 3px 10px rgba(232,93,26,0.32);}
+.land-menu{display:flex;align-items:center;gap:2rem;list-style:none;flex:1;justify-content:center;}
+.land-menu a{font-size:0.86rem;font-weight:600;color:var(--text2);text-decoration:none;transition:color 0.15s;position:relative;}
+.land-menu a:hover{color:var(--accent);}
+.land-nav .land-actions{display:flex;gap:10px;align-items:center;flex-shrink:0;}
+.land-actions a.btn-sec{padding:0.6rem 1.2rem;font-size:0.83rem;}
+.land-actions a.btn-cta-sm{background:var(--accent-grad);color:#fff;padding:0.62rem 1.3rem;border-radius:var(--r2);font-size:0.83rem;font-weight:700;text-decoration:none;box-shadow:0 4px 12px rgba(232,93,26,0.3);transition:all 0.2s;}
+.land-actions a.btn-cta-sm:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(232,93,26,0.38);}
+
+.burger{display:none;width:38px;height:38px;border-radius:9px;border:1.5px solid var(--border);background:#fff;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;flex-shrink:0;}
+.burger span{width:18px;height:2px;background:var(--text2);border-radius:2px;transition:all 0.2s;}
+#navToggle{display:none;}
+
+/* ── Hero ───────────────────────────────────────────────────────────── */
+.land-hero{position:relative;overflow:hidden;background:linear-gradient(155deg,#16265E 0%,#2354D6 52%,#0891B2 100%);padding:5.5rem 3rem 6.5rem;color:#fff;}
+.land-hero .orb{position:absolute;border-radius:50%;pointer-events:none;}
+.land-hero .orb1{top:-90px;right:-60px;width:420px;height:420px;background:radial-gradient(circle,rgba(255,255,255,0.13) 0%,transparent 65%);}
+.land-hero .orb2{bottom:-110px;left:20px;width:340px;height:340px;background:radial-gradient(circle,rgba(8,145,178,0.24) 0%,transparent 65%);}
+.land-hero .grid-lines{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.045) 1px,transparent 1px);background-size:46px 46px;}
+.land-eyebrow{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.25);border-radius:50px;padding:6px 14px;font-size:11.5px;font-weight:700;letter-spacing:0.4px;margin-bottom:1.4rem;}
+.land-eyebrow .dot{width:6px;height:6px;border-radius:50%;background:#4ADE80;box-shadow:0 0 0 3px rgba(74,222,128,0.25);}
+.land-hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.15fr 0.95fr;gap:2.5rem;align-items:center;max-width:1240px;margin:0 auto;}
+.land-hero-inner h1{font-size:3.1rem;font-weight:800;line-height:1.12;letter-spacing:-1.2px;margin-bottom:1.2rem;}
+.land-hero-inner h1 em{background:linear-gradient(90deg,#BAE6FD,#7DD3FC);-webkit-background-clip:text;background-clip:text;color:transparent;font-style:normal;}
+.land-hero-inner p{font-size:1.02rem;color:rgba(255,255,255,0.82);line-height:1.8;max-width:490px;margin-bottom:2.2rem;}
+.land-hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:2rem;}
+.land-hero-actions .btn-cta{width:auto;padding:0.95rem 2rem;}
+.land-hero-actions .btn-ghost{background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.3);color:#fff;padding:0.95rem 1.8rem;border-radius:var(--r2);font-weight:700;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;transition:all 0.2s;font-size:0.9rem;}
+.land-hero-actions .btn-ghost:hover{background:rgba(255,255,255,0.18);transform:translateY(-1px);}
+.land-badges{display:flex;gap:0.6rem;flex-wrap:wrap;}
+.land-badge{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:50px;padding:5px 13px;font-size:11px;color:rgba(255,255,255,0.88);display:flex;align-items:center;gap:6px;font-weight:600;}
+.land-badge .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.land-hero-art{display:flex;align-items:center;justify-content:center;}
+.service-toon{width:100%;max-width:430px;height:auto;overflow:visible;filter:drop-shadow(0 20px 40px rgba(0,0,0,0.25));}
+
+/* ── Funny note ─────────────────────────────────────────────────────── */
+.funny-note{max-width:860px;margin:0 auto;padding:0 3rem;position:relative;z-index:3;}
+.funny-note-inner{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px dashed #D97706;border-radius:var(--r2);padding:0.95rem 1.3rem;margin-top:-1.6rem;box-shadow:var(--shadow);}
+.funny-note-emoji{font-size:1.5rem;flex-shrink:0;}
+.funny-note-inner p{font-size:0.85rem;color:#92400E;font-weight:600;line-height:1.55;margin:0;}
+
+/* ── Stat strip ─────────────────────────────────────────────────────── */
+.stat-strip{max-width:1100px;margin:3.5rem auto 0;padding:0 3rem;}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;}
+.stat-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:1.4rem 1rem;text-align:center;box-shadow:var(--shadow-sm);transition:transform 0.2s, box-shadow 0.2s;}
+.stat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow);}
+.stat-num{font-size:1.7rem;font-weight:800;background:var(--accent-grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.stat-lbl{font-size:11.5px;color:var(--text3);font-weight:600;margin-top:4px;}
+
+/* ── Section shell ──────────────────────────────────────────────────── */
+.land-section{max-width:1140px;margin:0 auto;padding:5.5rem 3rem;}
+.land-section.tight{padding-top:3.5rem;}
+.section-eyebrow{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent);background:var(--accent-light);padding:5px 14px;border-radius:50px;margin-bottom:1rem;}
+.section-head{text-align:center;max-width:640px;margin:0 auto 3rem;}
+.section-head h2{font-size:2rem;font-weight:800;color:var(--text);letter-spacing:-0.6px;margin-bottom:0.75rem;}
+.section-head p{font-size:0.95rem;color:var(--text3);line-height:1.7;}
+
+/* ── Features ───────────────────────────────────────────────────────── */
+.land-feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.4rem;}
+.land-feature-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:1.7rem;box-shadow:var(--shadow-sm);transition:transform 0.2s, box-shadow 0.2s;}
+.land-feature-card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--accent-light);}
+.lf-icon-wrap{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1rem;}
+.land-feature-card h3{font-size:0.98rem;font-weight:800;color:var(--text);margin-bottom:0.5rem;}
+.land-feature-card p{font-size:0.85rem;color:var(--text3);line-height:1.65;}
+
+/* ── How it works ───────────────────────────────────────────────────── */
+.land-section.alt{background:var(--bg3);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.how-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;position:relative;}
+.how-step{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:1.8rem 1.6rem;box-shadow:var(--shadow-sm);position:relative;}
+.how-num{width:38px;height:38px;border-radius:11px;background:var(--accent-grad);color:#fff;font-weight:800;font-size:1rem;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;box-shadow:0 4px 12px rgba(232,93,26,0.3);}
+.how-step h3{font-size:0.98rem;font-weight:800;color:var(--text);margin-bottom:0.5rem;}
+.how-step p{font-size:0.85rem;color:var(--text3);line-height:1.65;}
+
+/* ── Testimonials ───────────────────────────────────────────────────── */
+.testi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1.4rem;}
+.testi-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:1.7rem;box-shadow:var(--shadow-sm);}
+.testi-stars{color:#F59E0B;font-size:0.85rem;margin-bottom:0.85rem;letter-spacing:2px;}
+.testi-quote{font-size:0.87rem;color:var(--text2);line-height:1.75;margin-bottom:1.25rem;}
+.testi-person{display:flex;align-items:center;gap:10px;}
+.testi-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff;flex-shrink:0;}
+.testi-name{font-size:0.83rem;font-weight:700;color:var(--text);}
+.testi-role{font-size:11px;color:var(--text4);font-weight:500;}
+
+/* ── FAQ ────────────────────────────────────────────────────────────── */
+.faq-list{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:0.75rem;}
+.faq-item{background:#fff;border:1px solid var(--border);border-radius:var(--r2);box-shadow:var(--shadow-xs);overflow:hidden;}
+.faq-item summary{list-style:none;cursor:pointer;padding:1.1rem 1.3rem;font-size:0.9rem;font-weight:700;color:var(--text);display:flex;justify-content:space-between;align-items:center;gap:1rem;}
+.faq-item summary::-webkit-details-marker{display:none;}
+.faq-item summary::after{content:'+';font-size:1.2rem;font-weight:400;color:var(--accent);transition:transform 0.2s;flex-shrink:0;}
+.faq-item[open] summary::after{transform:rotate(45deg);}
+.faq-item p{padding:0 1.3rem 1.15rem;font-size:0.85rem;color:var(--text3);line-height:1.7;margin:0;}
+.faq-item[open]{box-shadow:var(--shadow-sm);}
+
+/* ── Final CTA ──────────────────────────────────────────────────────── */
+.land-cta-wrap{max-width:1100px;margin:0 auto 5rem;padding:0 3rem;}
+.land-cta{text-align:center;padding:3.5rem 2rem;border-radius:var(--r);background:linear-gradient(155deg,#16265E 0%,#2354D6 55%,#0891B2 100%);position:relative;overflow:hidden;}
+.land-cta::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.045) 1px,transparent 1px);background-size:40px 40px;}
+.land-cta h2{position:relative;font-size:1.6rem;font-weight:800;color:#fff;margin-bottom:0.5rem;}
+.land-cta p{position:relative;color:rgba(255,255,255,0.8);font-size:0.9rem;margin-bottom:1.6rem;}
+.land-cta .btn-cta{position:relative;width:auto;padding:0.9rem 2.2rem;display:inline-block;}
+
+/* ── Footer ─────────────────────────────────────────────────────────── */
+.land-footer{background:#0B1220;color:rgba(255,255,255,0.65);padding:3.5rem 3rem 2rem;}
+.footer-grid{max-width:1140px;margin:0 auto;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:2.5rem;padding-bottom:2.5rem;border-bottom:1px solid rgba(255,255,255,0.1);}
+.footer-brand{display:flex;align-items:center;gap:10px;font-size:1.05rem;font-weight:800;color:#fff;margin-bottom:0.9rem;}
+.footer-brand .logo-icon{width:32px;height:32px;background:var(--accent-grad);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:0.9rem;}
+.footer-col p{font-size:0.82rem;line-height:1.7;max-width:280px;}
+.footer-col h4{font-size:12px;text-transform:uppercase;letter-spacing:0.6px;color:rgba(255,255,255,0.9);margin-bottom:1rem;font-weight:700;}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:0.65rem;}
+.footer-col a{font-size:0.83rem;color:rgba(255,255,255,0.6);text-decoration:none;transition:color 0.15s;}
+.footer-col a:hover{color:#fff;}
+.footer-social{display:flex;gap:10px;margin-top:1.1rem;}
+.footer-social a{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;transition:background 0.2s;}
+.footer-social a:hover{background:var(--accent);}
+.footer-bottom{max-width:1140px;margin:0 auto;padding-top:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;font-size:12px;color:rgba(255,255,255,0.45);}
+
+/* ── Servicing toon animations ──────────────────────────────────────── */
+.car-body{animation:carIdle 2.6s ease-in-out infinite;}
+@keyframes carIdle{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+.wheel{transform-box:view-box;animation:wheelSpin 3s linear infinite;}
+@keyframes wheelSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.gear{transform-box:view-box;animation:gearSpin 7s linear infinite;}
+@keyframes gearSpin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.wrench{transform-box:view-box;animation:wrenchBounce 1.8s ease-in-out infinite;}
+@keyframes wrenchBounce{0%,100%{transform:translate(300px,150px) rotate(-28deg);}50%{transform:translate(300px,143px) rotate(-12deg);}}
+.oil-drop{animation:oilDrip 2.4s ease-in infinite;}
+@keyframes oilDrip{0%{transform:translateY(0);opacity:0;}12%{opacity:1;}88%{transform:translateY(34px);opacity:1;}100%{transform:translateY(38px);opacity:0;}}
+.sparkle{transform-box:view-box;animation:sparkleTwinkle 1.7s ease-in-out infinite;}
+.sparkle.s2{animation-delay:0.4s;}
+.sparkle.s3{animation-delay:0.9s;}
+@keyframes sparkleTwinkle{0%,100%{opacity:0.15;transform:scale(0.75);}50%{opacity:1;transform:scale(1.15);}}
+.service-bubble{animation:bubbleFloat 2.6s ease-in-out infinite;}
+@keyframes bubbleFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+@media(max-width:980px){
+  .land-hero-grid{grid-template-columns:1fr;text-align:center;}
+  .land-hero-inner p{margin-left:auto;margin-right:auto;}
+  .land-hero-actions,.land-badges{justify-content:center;}
+  .service-toon{max-width:310px;margin-top:1.5rem;}
+  .how-steps{grid-template-columns:1fr;}
+  .footer-grid{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:800px){
+  .land-menu{display:none;}
+  .burger{display:flex;}
+  #navToggle:checked ~ .land-nav .land-menu{
+    display:flex;flex-direction:column;align-items:flex-start;gap:0;
+    position:absolute;top:100%;left:0;right:0;background:#fff;
+    border-bottom:1px solid var(--border);box-shadow:var(--shadow);
+    padding:0.5rem 1.5rem 1rem;
+  }
+  #navToggle:checked ~ .land-nav .land-menu a{padding:0.7rem 0;width:100%;border-bottom:1px solid var(--bg3);}
+  .land-nav{position:relative;padding:1rem 1.25rem;}
+}
+@media(max-width:700px){
+  .land-hero{padding:3.25rem 1.25rem 4.5rem;}
+  .land-hero-inner h1{font-size:2.1rem;}
+  .land-section{padding:3.5rem 1.25rem;}
+  .funny-note{padding:0 1.25rem;}
+  .funny-note-inner{flex-direction:column;text-align:center;margin-top:1rem;}
+  .stat-strip{padding:0 1.25rem;margin-top:2.5rem;}
+  .stat-grid{grid-template-columns:1fr 1fr;}
+  .service-toon{max-width:230px;}
+  .land-cta-wrap{padding:0 1.25rem;}
+  .land-footer{padding:2.75rem 1.25rem 1.5rem;}
+  .footer-grid{grid-template-columns:1fr;gap:2rem;}
+  .footer-bottom{flex-direction:column;align-items:flex-start;}
+}
+@media(max-width:420px){
+  .service-toon{max-width:190px;}
+  .stat-grid{grid-template-columns:1fr 1fr;gap:0.7rem;}
+  .stat-card{padding:1rem 0.6rem;}
+}
+</style>
 </head>
 <body>
 
-<!-- ═══ LOGIN ═══ -->
-<div class="auth-page active" id="P_login">
-  <div class="auth-left">
-    <div class="auth-left-bg"></div>
-    <div class="orb orb1"></div><div class="orb orb2"></div>
-    <div class="grid-lines"></div>
-    <div class="auth-left-content">
-      <div class="logo-mark"><div class="logo-icon">⚙</div>MotoTrack</div>
-      <div class="auth-headline">Never miss a<br><em>service interval</em><br>again.</div>
-      <div class="auth-sub">Smart maintenance tracking for your cars &amp; bikes — with instant email alerts so you're always road-ready.</div>
-      <div class="auth-badges">
-        <div class="auth-badge"><div class="dot" style="background:var(--green)"></div>Engine Oil</div>
-        <div class="auth-badge"><div class="dot" style="background:var(--blue)"></div>Brake Fluid</div>
-        <div class="auth-badge"><div class="dot" style="background:var(--amber)"></div>Air Filter</div>
-        
-        <div class="auth-badge"><div class="dot" style="background:var(--accent)"></div>50+ Service Types</div>
+<header class="land-header">
+  <input type="checkbox" id="navToggle">
+  <nav class="land-nav">
+    <a class="logo-mark" href="#top"><div class="logo-icon">⚙</div>MotoTrack</a>
+    <ul class="land-menu">
+      <li><a href="#top">Home</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How it Works</a></li>
+      <li><a href="#testimonials">Testimonials</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <div class="land-actions">
+      <a class="btn-sec" href="login.html">Sign in</a>
+      <a class="btn-cta-sm" href="register.html">Get started</a>
+    </div>
+    <label class="burger" for="navToggle"><span></span><span></span><span></span></label>
+  </nav>
+</header>
+
+<div id="top"></div>
+<div class="land-hero">
+  <div class="orb orb1"></div><div class="orb orb2"></div>
+  <div class="grid-lines"></div>
+  <div class="land-hero-grid">
+    <div class="land-hero-inner">
+      <div class="land-eyebrow"><span class="dot"></span>Free forever · No credit card</div>
+      <h1>Never miss a<br><em>service interval</em><br>again.</h1>
+      <p>Smart maintenance tracking for your cars, bikes &amp; tractors — with instant email alerts so you're always road-ready.</p>
+      <div class="land-hero-actions">
+        <a class="btn-cta" href="register.html">Create free account →</a>
+        <a class="btn-ghost" href="login.html">Sign in</a>
+      </div>
+      <div class="land-badges">
+        <div class="land-badge"><div class="dot" style="background:#4ADE80"></div>Engine Oil</div>
+        <div class="land-badge"><div class="dot" style="background:#93C5FD"></div>Brake Fluid</div>
+        <div class="land-badge"><div class="dot" style="background:#FCD34D"></div>Air Filter</div>
+        <div class="land-badge"><div class="dot" style="background:#FDBA74"></div>50+ Service Types</div>
       </div>
     </div>
-  </div>
-  <div class="auth-right">
-    <div class="auth-form fu" id="loginForm">
-      <h2>Welcome back</h2>
-      <p class="sub">Sign in to your MotoTrack dashboard</p>
-      <div class="field"><label>Email</label><input type="email" id="li_email" placeholder="you@example.com"></div>
-      <div class="field"><label>Password</label><div class="password-field"><input type="password" id="li_pass" placeholder="Enter your password"><button type="button" class="password-toggle" id="li_pass_toggle" onclick="toggleLoginPassword()">Show</button></div></div>
-      <div class="form-error hidden" id="loginError"></div>
-      <button class="btn-cta" id="loginBtn" onclick="login()">Sign in →</button>
-      <div class="auth-switch">No account? <a onclick="goPage('P_register')">Create one free</a></div>
-    </div>
-  </div>
-</div>
 
-<!-- ═══ REGISTER ═══ -->
-<div class="auth-page" id="P_register">
-  <div class="auth-left">
-    <div class="auth-left-bg"></div>
-    <div class="orb orb1"></div><div class="orb orb2"></div>
-    <div class="grid-lines"></div>
-    <div class="auth-left-content">
-      <div class="logo-mark"><div class="logo-icon">⚙</div>MotoTrack</div>
-      <div class="auth-headline">Set up takes<br><em>2 minutes.</em><br>Savings last years.</div>
-      <div class="auth-sub">Register your vehicles once. MotoTrack auto-calculates every service deadline and alerts you via email.</div>
-      <div class="auth-badges">
-        
-        <div class="auth-badge"><div class="dot" style="background:var(--blue)"></div>Email alerts</div>
-        <div class="auth-badge"><div class="dot" style="background:var(--green)"></div>Free forever</div>
-      </div>
-    </div>
-  </div>
-  <div class="auth-right">
-    <div class="auth-form fu">
-      <h2>Create account</h2>
-      <p class="sub">Free forever. No credit card needed.</p>
-      <div class="form-row">
-        <div class="field"><label>First name</label><input type="text" id="r_first" placeholder="Arjun"></div>
-        <div class="field"><label>Last name</label><input type="text" id="r_last" placeholder="Kumar"></div>
-      </div>
-      <div class="field"><label>Email</label><input type="email" id="r_email" placeholder="you@example.com"></div>
-      <div class="field"><label>Password</label><input type="password" id="r_pass" placeholder="Min. 8 characters"></div>
-
-      <div class="form-error hidden" id="registerError"></div>
-      <button class="btn-cta" onclick="register()">Create account →</button>
-      <div class="auth-switch">Already have an account? <a onclick="goPage('P_login')">Sign in</a></div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ APP SHELL ═══ -->
-<div class="app-shell" id="P_app">
-  <div class="sidebar">
-    <div class="sb-logo">
-      <div class="logo-sq">⚙</div>
-      <div><div class="brand">MotoTrack</div><div class="tagline">Service Manager</div></div>
-    </div>
-    <nav class="sb-nav">
-      <div class="nav-sep">Overview</div>
-      <div class="nav-item active" data-view="dashboard" onclick="nav(this)"><span class="ni">◈</span>Dashboard</div>
-      <div class="nav-item" data-view="notifications" onclick="nav(this)"><span class="ni">🔔</span>Notifications<span class="nav-badge hidden" id="NB"></span></div>
-      <div class="nav-sep">Vehicles</div>
-      <div class="nav-item" data-view="vehicles" onclick="nav(this)"><span class="ni">🚗</span>My Vehicles</div>
-      <div class="nav-item" data-view="addVehicle" onclick="nav(this)"><span class="ni">＋</span>Add Vehicle</div>
-      <div class="nav-sep">Maintenance</div>
-      <div class="nav-item" data-view="servicelog" onclick="nav(this)"><span class="ni">📋</span>Service Log</div>
-      <div class="nav-item" data-view="upcoming" onclick="nav(this)"><span class="ni">📅</span>Upcoming</div>
-      <div class="nav-sep">Settings</div>
-      <div class="nav-item" data-view="alerts" onclick="nav(this)"><span class="ni">📨</span>Alert Settings</div>
-      <div class="nav-item" data-view="contactus" onclick="nav(this)"><span class="ni">✉️</span>Contact Us</div>
-      <div class="nav-item" data-view="profile" onclick="nav(this)"><span class="ni">👤</span>Profile</div>
-      <center><div><button class="u-logout" onclick="logout()" title="Logout">⏻LogOut</button></div></center>
-    </nav>
-    <div class="sb-user">
-      <div class="u-av" id="SB_AV">?</div>
-      <div><div class="u-name" id="SB_NAME">Loading...</div><div class="u-email" id="SB_EMAIL"></div></div>
-      
-    </div>
-  </div>
-
-  <div class="main">
-    <div class="topbar">
-      <div class="tb-title" id="TB_TITLE">Dashboard</div>
-      <div class="search"><span>🔍</span><input id="searchInput" placeholder="Search vehicles, services..." oninput="handleSearch(this.value)"></div>
-      <div class="tb-btn" id="TOP_BELL" onclick="nav(document.querySelector('[data-view=notifications]'))">🔔<span class="nb hidden" id="TOP_NB"></span></div>
-<div class="tb-btn" onclick="nav(document.querySelector('[data-view=profile]'))">👤</div>
-    </div>
-
-    <div class="content">
-
-      <!-- ─── DASHBOARD ─── -->
-      <div class="view active fu" id="V_dashboard">
-        <div id="alertStrip" class="alert-strip hidden">
-          <span class="as-icon">🚨</span>
-          <div class="as-text"><strong id="alertTitle"></strong><p id="alertMsg"></p></div>
-          <button class="as-dismiss" onclick="document.getElementById('alertStrip').classList.add('hidden')">✕</button>
-        </div>
-        <div class="stats-row" id="dashStats">
-          <div class="sc sc-loading"><div class="sc-accent" style="background:var(--accent)"></div><div class="sc-label">Total Vehicles</div><div class="sc-val">—</div></div>
-          <div class="sc sc-loading"><div class="sc-accent" style="background:var(--red)"></div><div class="sc-label">Overdue</div><div class="sc-val">—</div></div>
-          <div class="sc sc-loading"><div class="sc-accent" style="background:var(--amber)"></div><div class="sc-label">Due This Month</div><div class="sc-val">—</div></div>
-          <div class="sc sc-loading"><div class="sc-accent" style="background:var(--green)"></div><div class="sc-label">Services Done</div><div class="sc-val">—</div></div>
-        </div>
-        <div class="two-col">
-          <div class="panel">
-            <div class="panel-title">Upcoming Services <a onclick="nav(document.querySelector('[data-view=upcoming]'))">View all →</a></div>
-            <div class="up-list" id="dashUpcoming"><div class="loading-row">Loading...</div></div>
-          </div>
-          <div class="panel">
-            <div class="panel-title">Recent Alerts <a onclick="nav(document.querySelector('[data-view=notifications]'))">All →</a></div>
-            <div class="up-list" id="dashAlerts"><div class="loading-row">Loading...</div></div>
-          </div>
-        </div>
-        <div class="sec-title">Vehicle Health <a onclick="nav(document.querySelector('[data-view=vehicles]'))">All vehicles →</a></div>
-        <div class="vh-grid" id="dashVehicles"><div class="loading-row">Loading vehicles...</div></div>
-      </div>
-
-      <!-- ─── VEHICLES ─── -->
-      <div class="view fu" id="V_vehicles">
-        <div class="page-h"><div class="breadcrumb">Home › <span>My Vehicles</span></div><h1>My Vehicles</h1><p>Click any vehicle to view its full service breakdown</p></div>
-        <div class="vh-grid" id="vehiclesList"></div>
-      </div>
-
-      <!-- ─── VEHICLE DETAIL ─── -->
-      <div class="view fu" id="V_vehicleDetail">
-        <div id="VD_CONTENT"></div>
-      </div>
-
-      <!-- ─── SERVICE LOG ─── -->
-      <div class="view fu" id="V_servicelog">
-        <div class="page-h"><div class="breadcrumb">Home › <span>Service Log</span></div><h1>Service Log</h1><p>Complete maintenance history across all vehicles</p></div>
-        <div class="filter-bar">
-          <select id="filterVehicle" onchange="loadServiceLog()"><option value="">All Vehicles</option></select>
-          <select id="filterStatus" onchange="loadServiceLog()">
-            <option value="">All Status</option>
-            <option value="overdue">Overdue</option>
-            <option value="warning">Due Soon</option>
-            <option value="ok">Healthy</option>
-          </select>
-          <span id="svcLogTotalCost" style="margin-left:auto;font-size:0.82rem;font-weight:700;color:var(--green)"></span>
-          <button class="btn-sec" style="font-size:0.82rem;padding:6px 14px;" onclick="downloadServiceLogPdf()">📄 Download PDF</button>
-          <button class="btn-prim" style="font-size:0.82rem;padding:6px 14px;" onclick="openLogModal()">＋ Log Service</button>
-        </div>
-        <div class="svc-table">
-          <div class="st-head"><div>Service</div><div>Vehicle</div><div>Date</div><div>Reading</div><div>Cost</div><div>Status</div><div>Next Due</div></div>
-          <div id="serviceLogBody"></div>
-        </div>
-      </div>
-
-      <!-- ─── UPCOMING ─── -->
-      <div class="view fu" id="V_upcoming">
-        <div class="page-h"><div class="breadcrumb">Home › <span>Upcoming Services</span></div><h1>Upcoming Services</h1><p>All scheduled maintenance sorted by urgency</p></div>
-        <div id="upcomingList"></div>
-      </div>
-
-      <!-- ─── NOTIFICATIONS ─── -->
-      <div class="view fu" id="V_notifications">
-        <div class="page-h"><div class="breadcrumb">Home › <span>Notifications</span></div><h1>Notifications</h1><p>All alerts delivered via Email</p></div>
-        <div class="notif-tabs">
-          <div class="nt active" onclick="filterNotifs('',this)">All</div>
-          <div class="nt" onclick="filterNotifs('overdue',this)">Overdue</div>
-          <div class="nt" onclick="filterNotifs('warning',this)">Upcoming</div>
-          <div class="nt" onclick="filterNotifs('completion',this)">Completed</div>
-        </div>
-        <div class="notif-list" id="notifList"></div>
-      </div>
-
-      <!-- ─── ALERT SETTINGS ─── -->
-      <div class="view fu" id="V_alerts">
-        <div class="page-h"><div class="breadcrumb">Home › <span>Alert Settings</span></div><h1>Alert Settings</h1><p>Configure how and when MotoTrack notifies you</p></div>
-
-        <div class="notif-settings">
-          <div class="ns-title">✉ Email Alerts <span class="ns-badge">Active</span></div>
-          <div class="toggle-row"><div class="tr-info"><div class="tl">Advance warning</div><div class="ts">Email before any service reaches the selected km or hour limit</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle on em alert-toggle" id="alert_warning" onclick="toggleAlert(this)"></div></div>
-          <div class="toggle-row"><div class="tr-info"><div class="tl">Urgent reminder</div><div class="ts">Extra email when a service is within the final 50 km, 50 hrs, or 10 days</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle on em alert-toggle" id="alert_urgent" onclick="toggleAlert(this)"></div></div>
-          <div class="toggle-row"><div class="tr-info"><div class="tl">Overdue critical alert</div><div class="ts">Email when any service passes its due date or due reading</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle on em alert-toggle" id="alert_overdue" onclick="toggleAlert(this)"></div></div>
-          <div class="toggle-row"><div class="tr-info"><div class="tl">Service completion receipt</div><div class="ts">Email confirmation every time you log a completed service</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle on em alert-toggle" id="alert_completion" onclick="toggleAlert(this)"></div></div>
-          <div class="toggle-row"><div class="tr-info"><div class="tl">Reading update reminder</div><div class="ts">Weekly email with a link to update vehicle readings</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle on em alert-toggle" id="alert_odometer" onclick="toggleAlert(this)"></div></div>
-          <div class="toggle-row"><div class="tr-info"><div class="tl">Monthly health digest</div><div class="ts">Full vehicle health report on the 1st of every month</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle alert-toggle" id="alert_digest" onclick="toggleAlert(this)"></div></div>
-        </div>
-
-        <div class="notif-settings">
-          <div class="ns-title">⏰ Reminder Interval</div>
-          <div class="reminder-grid">
-            <div class="field"><label>Send before distance</label>
-              <select id="warnKmPreset" onchange="handleWarnKmPreset()">
-                <option value="100">100 km / hrs</option><option value="250">250 km / hrs</option><option value="500">500 km / hrs</option><option value="custom">Manual</option>
-              </select>
-            </div>
-            <div class="field"><label>Manual km / hrs</label>
-              <input type="number" id="warnKmCustom" min="50" step="50" placeholder="100" oninput="handleWarnKmManual()">
-            </div>
-            <div class="field"><label>Send before time</label>
-              <select id="warnDays">
-                <option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option>
-              </select>
-            </div>
-          </div>
-          <div class="settings-actions">
-            <button class="btn-prim" onclick="saveAlertSettings()">Save Settings</button>
-          </div>
-        </div>
-
-        <div class="notif-settings">
-          <div class="ns-title">👁 Email Preview</div>
-          <div class="email-preview">
-            <div class="em-subject">🔴 Engine Oil overdue — Honda City</div>
-            <div class="em-from">From: MotoTrack &lt;dravidbabu11@gmail.com&gt; · To: you@example.com</div>
-            <div class="em-body">Hi Arjun,<br><br>Your <strong>Honda City</strong> engine oil change is now <span style="color:var(--red)"><strong>500 km overdue</strong></span>.<br><br>Last changed: 9,500 km · Due at: 10,000 km · Current: 10,500 km<br>Oil to use: 5W-30 Synthetic, 3.5L<br><br>Continued driving with degraded oil increases engine wear significantly.<div class="em-cta">View Service Details →</div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ─── ADD VEHICLE ─── -->
-      <div class="view fu" id="V_addVehicle">
-        <div class="page-h"><div class="breadcrumb">Home › Vehicles › <span>Add New</span></div><h1>Add Vehicle</h1><p>Register your vehicle to auto-generate its full service schedule</p></div>
-        <div class="av-form">
-          <div class="fsec">
-            <div class="fsec-title">Vehicle Type</div>
-            <div class="vt-row" id="vtRow">
-              <div class="vt-b sel" data-type="car" onclick="selVT(this)"><div class="vi">🚗</div><div class="vl">Car</div></div>
-              <div class="vt-b" data-type="bike" onclick="selVT(this)"><div class="vi">🏍</div><div class="vl">Bike / Motorcycle</div></div>
-              <div class="vt-b" data-type="tractor" onclick="selVT(this)"><div class="vi">🚜</div><div class="vl">Tractor</div></div>
-            </div>
-          </div>
-          <div class="fsec">
-            <div class="fsec-title">Basic Info</div>
-            <div class="form-row">
-              <div class="field"><label>Make / Brand</label>
-                <select id="av_make" onchange="populateModelOptions()">
-                  <option value="">Select make</option>
-                </select>
-              </div>
-              <div class="field"><label>Model</label>
-                <select id="av_model_select" onchange="handleModelSelect()" disabled>
-                  <option value="">Select make first</option>
-                </select>
-                <input type="text" id="av_model" placeholder="Type model name" style="margin-top:8px;display:none">
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="field"><label>Year</label>
-                <select id="av_year">
-                  <option>2025</option><option>2024</option><option>2023</option><option>2022</option><option selected>2021</option><option>2020</option><option>2019</option><option>2018</option><option>2017</option><option>2016</option>
-                </select>
-              </div>
-              <div class="field"><label>Fuel Type</label>
-                <select id="av_fuel">
-                  <option value="petrol">Petrol</option><option value="diesel">Diesel</option><option value="cng">CNG</option><option value="electric">Electric</option><option value="hybrid">Hybrid</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="field"><label>Registration No.</label><input type="text" id="av_reg" placeholder="TN-07-XX-1234"></div>
-              <div class="field"><label>Current Reading</label><input type="number" id="av_km" placeholder="18500" min="0"></div>
-            </div>
-          </div>
-          <div class="fsec">
-            <div class="fsec-title">Engine Details</div>
-            <div class="form-row">
-              <div class="field"><label>Engine Capacity</label><input type="text" id="av_cc" placeholder="1.2L / 471cc"></div>
-              <div class="field"><label>Transmission</label>
-                <select id="av_tx">
-                  <option>Manual</option><option>Automatic</option><option>CVT</option><option>DCT</option><option>AMT</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div class="form-error hidden" id="avError"></div>
-          <button class="btn-prim full" id="avBtn" onclick="addVehicle()">Add Vehicle &amp; Generate Service Schedule →</button>
-        </div>
-      </div>
-
-
-      <!-- ─── CONTACT US ─── -->
-      <div class="view fu" id="V_contactus">
-        <div class="page-h"><div class="breadcrumb">Home › <span>Contact Us</span></div><h1>Contact Us</h1><p>Found a bug, or have an idea to improve MotoTrack? Send it straight to us.</p></div>
-        <div class="settings-card" style="max-width:640px">
-          <div class="settings-section">
-            <h3>Send a message</h3>
-            <div class="field"><label>Your Email</label><input type="email" id="cu_email" disabled></div>
-            <div class="field"><label>Subject</label><input type="text" id="cu_subject" placeholder="e.g. Feature request, bug report..."></div>
-            <div class="field"><label>Message</label>
-              <textarea id="cu_message" rows="6" placeholder="Tell us what's on your mind..." style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:var(--r2);padding:0.75rem 1rem;color:var(--text);font-family:var(--font-body);font-size:0.88rem;outline:none;resize:vertical"></textarea>
-            </div>
-            <div class="form-error hidden" id="cuError"></div>
-            <button class="btn-prim" id="cuBtn" style="font-size:0.83rem;padding:8px 20px;margin-top:0.5rem" onclick="sendContactMessage()">Send Message →</button>
-          </div>
-        </div>
-      </div>
-      <!-- ─── PROFILE ─── -->
-      <div class="view fu" id="V_profile">
-        <div class="page-h"><div class="breadcrumb">Home › <span>Profile</span></div><h1>Profile &amp; Settings</h1></div>
-        <div class="prof-grid">
-          <div class="prof-card">
-            <div class="prof-av" id="PR_AV">?</div>
-            <div class="prof-name" id="PR_NAME">—</div>
-            <div class="prof-email" id="PR_EMAIL">—</div>
-            <div class="prof-stats">
-              <div class="ps-it"><div class="ps-v" id="ps_vehicles">0</div><div class="ps-k">Vehicles</div></div>
-              <div class="ps-it"><div class="ps-v" id="ps_services">0</div><div class="ps-k">Services</div></div>
-              <div class="ps-it"><div class="ps-v" id="ps_alerts">0</div><div class="ps-k">Alerts Sent</div></div>
-              <div class="ps-it"><div class="ps-v">✓</div><div class="ps-k">Active</div></div>
-            </div>
-          </div>
-          <div class="settings-card">
-            <div class="settings-section">
-              <h3>Personal Information</h3>
-              <div class="form-row">
-                <div class="field"><label>First Name</label><input type="text" id="pf_first"></div>
-                <div class="field"><label>Last Name</label><input type="text" id="pf_last"></div>
-              </div>
-              <div class="field"><label>Email Address</label><input type="email" id="pf_email"></div>
-              <div class="form-error hidden" id="profileError"></div>
-              <button class="btn-prim" style="font-size:0.83rem;padding:8px 20px;margin-top:0.5rem" onclick="saveProfile()">Save Changes</button>
-            </div>
-            <div class="settings-section">
-              <h3>Notification Channels</h3>
-              <div class="toggle-row"><div class="tr-info"><div class="tl">Email alerts</div><div class="ts">Receive detailed email reminders</div></div><div class="toggle" id="pf_em_toggle" onclick="toggleProfileEmail(this)"></div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /content -->
-  </div><!-- /main -->
-</div><!-- /app-shell -->
-
-<!-- LOG SERVICE MODAL -->
-<div class="overlay" id="MODAL_LOG">
-  <div class="modal">
-    <div class="mh"><h2>Log Service</h2><button class="mclose" onclick="closeModal('MODAL_LOG')">✕</button></div>
-    <div class="mb">
-      <div class="form-row">
-        <div class="field"><label>Vehicle</label>
-          <select id="log_vehicle" onchange="loadCatalogueForVehicle()">
-            <option value="">Select vehicle</option>
-          </select>
-        </div>
-        <div class="field"><label>Service Type</label>
-          <select id="log_service">
-            <option value="">Select service</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="field"><label>Date Done</label><input type="date" id="log_date"></div>
-        <div class="field"><label>Reading at Service</label><input type="number" id="log_km" placeholder="32500" min="0"></div>
-      </div>
-      <div class="field"><label>Oil / Product Used</label><input type="text" id="log_spec" placeholder="e.g. 10W-30 Castrol, 2.1L"></div>
-      <div class="form-row">
-        <div class="field"><label>Cost (₹)</label><input type="number" id="log_cost" placeholder="850"></div>
-        <div class="field"><label>Workshop</label><input type="text" id="log_workshop" placeholder="Service center name"></div>
-      </div>
-      <div class="field"><label>Notes (optional)</label><input type="text" id="log_notes" placeholder="Any observations or remarks"></div>
-      <div class="modal-info">
-        <span style="color:var(--blue)">✉ Email</span> receipt will be sent automatically after logging.
-      </div>
-      <div class="form-error hidden" id="logError"></div>
-    </div>
-    <div class="mf">
-      <button class="btn-sec" onclick="closeModal('MODAL_LOG')">Cancel</button>
-      <button class="btn-prim" id="logBtn" onclick="logService()">Log Service →</button>
+    <div class="land-hero-art" aria-hidden="true">
+      <svg class="service-toon" viewBox="0 0 420 320" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="195" cy="262" rx="118" ry="11" fill="rgba(0,0,0,0.18)"/>
+        <g class="sparkle s1" style="transform-origin:100px 84px">
+          <rect x="97" y="74" width="6" height="20" rx="3" fill="#FCD34D"/>
+          <rect x="90" y="81" width="20" height="6" rx="3" fill="#FCD34D"/>
+        </g>
+        <g class="sparkle s2" style="transform-origin:340px 66px">
+          <rect x="337" y="56" width="6" height="20" rx="3" fill="#FDBA74"/>
+          <rect x="330" y="63" width="20" height="6" rx="3" fill="#FDBA74"/>
+        </g>
+        <g class="sparkle s3" style="transform-origin:205px 48px">
+          <rect x="202.5" y="40" width="5" height="16" rx="2.5" fill="#93C5FD"/>
+          <rect x="197" y="45.5" width="16" height="5" rx="2.5" fill="#93C5FD"/>
+        </g>
+        <g class="service-bubble">
+          <path d="M40 70h100c8 0 14 6 14 14v28c0 8-6 14-14 14h-58l-16 16v-16H40c-8 0-14-6-14-14V84c0-8 6-14 14-14z" fill="#ffffff" fill-opacity="0.96"/>
+          <text x="92" y="93" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-size="13" font-weight="800" fill="#16A34A">✓ Serviced!</text>
+        </g>
+        <g class="gear" style="transform-origin:345px 112px">
+          <circle cx="345" cy="112" r="16" fill="#FDBA74"/>
+          <g stroke="#FDBA74" stroke-width="7" stroke-linecap="round">
+            <line x1="345" y1="90" x2="345" y2="82"/>
+            <line x1="345" y1="134" x2="345" y2="142"/>
+            <line x1="323" y1="112" x2="315" y2="112"/>
+            <line x1="367" y1="112" x2="375" y2="112"/>
+            <line x1="329.5" y1="96.5" x2="324" y2="91"/>
+            <line x1="360.5" y1="127.5" x2="366" y2="133"/>
+            <line x1="329.5" y1="127.5" x2="324" y2="133"/>
+            <line x1="360.5" y1="96.5" x2="366" y2="91"/>
+          </g>
+          <circle cx="345" cy="112" r="6.5" fill="#fff"/>
+        </g>
+        <g class="wrench">
+          <rect x="-3.5" y="-17" width="7" height="34" rx="3.5" fill="#64748B"/>
+          <circle cx="0" cy="-17" r="8" fill="none" stroke="#64748B" stroke-width="4.5"/>
+          <rect x="-6" y="14" width="12" height="7" rx="2.5" fill="#64748B"/>
+        </g>
+        <g class="car-body">
+          <path d="M150,165 L168,118 L262,118 L288,165 Z" fill="#ffffff" fill-opacity="0.97"/>
+          <rect x="172" y="126" width="108" height="30" rx="7" fill="#93C5FD"/>
+          <rect x="108" y="163" width="212" height="55" rx="16" fill="#ffffff" fill-opacity="0.97"/>
+          <rect x="102" y="196" width="224" height="11" rx="5.5" fill="#E85D1A"/>
+          <line x1="222" y1="165" x2="222" y2="214" stroke="#CBD5E1" stroke-width="2"/>
+          <circle cx="316" cy="182" r="5.5" fill="#FDE68A"/>
+          <circle cx="118" cy="182" r="5" fill="#FCA5A5"/>
+          <g class="wheel" style="transform-origin:140px 228px">
+            <circle cx="140" cy="228" r="26" fill="#0F172A"/>
+            <circle cx="140" cy="228" r="26" fill="none" stroke="#FCD34D" stroke-width="5"/>
+            <circle cx="140" cy="228" r="9" fill="#FDBA74"/>
+            <g stroke="#FCD34D" stroke-width="2.5">
+              <line x1="140" y1="205" x2="140" y2="251"/>
+              <line x1="117" y1="228" x2="163" y2="228"/>
+            </g>
+          </g>
+          <g class="wheel" style="transform-origin:260px 228px">
+            <circle cx="260" cy="228" r="26" fill="#0F172A"/>
+            <circle cx="260" cy="228" r="26" fill="none" stroke="#FCD34D" stroke-width="5"/>
+            <circle cx="260" cy="228" r="9" fill="#FDBA74"/>
+            <g stroke="#FCD34D" stroke-width="2.5">
+              <line x1="260" y1="205" x2="260" y2="251"/>
+              <line x1="237" y1="228" x2="283" y2="228"/>
+            </g>
+          </g>
+        </g>
+        <path class="oil-drop" d="M195,222 c4,5 7,9 7,13 a7,7 0 1 1 -14,0 c0,-4 3,-8 7,-13z" fill="#78350F"/>
+        <ellipse cx="195" cy="261" rx="15" ry="4" fill="rgba(15,23,42,0.28)"/>
+      </svg>
     </div>
   </div>
 </div>
 
-<!-- UPDATE KM MODAL -->
-<div class="overlay" id="MODAL_KM">
-  <div class="modal" style="max-width:380px">
-    <div class="mh"><h2 id="km_modal_title">Update Odometer</h2><button class="mclose" onclick="closeModal('MODAL_KM')">✕</button></div>
-    <div class="mb">
-      <p id="km_modal_text" style="color:var(--text2);font-size:0.88rem;margin-bottom:1.2rem">Update current reading for <strong id="km_vehicleName" style="color:var(--text)">vehicle</strong></p>
-      <div class="field"><label id="km_value_label">Current Reading</label><input type="number" id="km_value" placeholder="32500" min="0"></div>
+<div class="funny-note">
+  <div class="funny-note-inner">
+    <span class="funny-note-emoji">😅</span>
+    <p>Oops! If your bike's speedometer isn't working, MotoTrack can't guess how far you've ridden. We're smart—but not psychic!</p>
+  </div>
+</div>
+
+<div class="stat-strip">
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-num">50+</div><div class="stat-lbl">Service Types</div></div>
+    <div class="stat-card"><div class="stat-num">3</div><div class="stat-lbl">Vehicle Categories</div></div>
+    <div class="stat-card"><div class="stat-num">100%</div><div class="stat-lbl">Free Forever</div></div>
+    <div class="stat-card"><div class="stat-num">24/7</div><div class="stat-lbl">Email Monitoring</div></div>
+  </div>
+</div>
+
+<div class="land-section" id="features">
+  <div class="section-head">
+    <span class="section-eyebrow">Features</span>
+    <h2>Everything you need to keep your vehicles road-ready</h2>
+    <p>One dashboard for every service interval, every alert and every vehicle you own.</p>
+  </div>
+  <div class="land-feature-grid">
+    <div class="land-feature-card">
+      <div class="lf-icon-wrap" style="background:var(--blue-light)">🚗</div>
+      <h3>Cars, Bikes &amp; Tractors</h3>
+      <p>Fuel-aware service schedules for petrol, diesel, CNG, electric and hybrid vehicles — auto-generated the moment you add a vehicle.</p>
     </div>
-    <div class="mf">
-      <button class="btn-sec" onclick="closeModal('MODAL_KM')">Cancel</button>
-      <button class="btn-prim" onclick="saveKm()">Update →</button>
+    <div class="land-feature-card">
+      <div class="lf-icon-wrap" style="background:var(--accent-light)">✉️</div>
+      <h3>Email Alerts</h3>
+      <p>Get warned before a service is due, an urgent reminder as the date closes in, and a critical alert if it's overdue.</p>
+    </div>
+    <div class="land-feature-card">
+      <div class="lf-icon-wrap" style="background:var(--green-light)">📋</div>
+      <h3>Full Service Log</h3>
+      <p>Every service you log is saved with cost, workshop and spec — with a one-click downloadable PDF report.</p>
+    </div>
+    <div class="land-feature-card">
+      <div class="lf-icon-wrap" style="background:var(--amber-light)">⏱</div>
+      <h3>Custom Intervals</h3>
+      <p>Override any manufacturer default, or add entirely custom services unique to your vehicle.</p>
+    </div>
+    <div class="land-feature-card">
+      <div class="lf-icon-wrap" style="background:var(--teal-light)">📊</div>
+      <h3>Monthly Health Digest</h3>
+      <p>A monthly summary of overdue, due-soon and healthy services across every vehicle you own.</p>
+    </div>
+    <div class="land-feature-card">
+      <div class="lf-icon-wrap" style="background:var(--red-light)">🔍</div>
+      <h3>Odometer Predictions</h3>
+      <p>Physical inspection checkpoints — seals, cables, mounts and more — predicted from your current reading.</p>
     </div>
   </div>
 </div>
 
-<!-- ADD CUSTOM SERVICE MODAL -->
-<div class="overlay" id="MODAL_CUSTOM_SVC">
-  <div class="modal">
-    <div class="mh"><h2>➕ Add Custom Service</h2><button class="mclose" onclick="closeModal('MODAL_CUSTOM_SVC')">✕</button></div>
-    <div class="mb">
-      <div class="field"><label>Service Name</label><input type="text" id="cs_name" placeholder="e.g. Suspension Bush Check"></div>
-      <div class="form-row">
-        <div class="field"><label>Interval (km / hrs)</label><input type="number" id="cs_interval_km" placeholder="e.g. 5000" min="1"></div>
-        <div class="field"><label>Interval (months)</label><input type="number" id="cs_interval_months" placeholder="e.g. 6" min="1"></div>
-      </div>
-      <div class="field"><label>Oil / Fluid / Part Spec</label><input type="text" id="cs_spec" placeholder="e.g. Grade / part name"></div>
-      <div class="form-row">
-        <div class="field"><label>Quantity (optional)</label><input type="text" id="cs_qty" placeholder="e.g. 1 unit"></div>
-        <div class="field"><label>Priority</label>
-          <select id="cs_priority">
-            <option value="normal">Normal</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-            <option value="low">Low</option>
-          </select>
-        </div>
-      </div>
-      <div class="modal-info">Provide at least one interval (km/hrs or months) — the alert fires on whichever comes first, same as built-in services.</div>
-      <div class="form-error hidden" id="csError"></div>
+<div class="land-section alt" id="how-it-works">
+  <div class="section-head">
+    <span class="section-eyebrow">How it works</span>
+    <h2>Set up once. Stay covered for years.</h2>
+    <p>Three steps and MotoTrack takes over the remembering.</p>
+  </div>
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="how-num">1</div>
+      <h3>Add your vehicle</h3>
+      <p>Tell us the make, model, fuel type and current reading — takes under a minute per vehicle.</p>
     </div>
-    <div class="mf">
-      <button class="btn-sec" onclick="closeModal('MODAL_CUSTOM_SVC')">Cancel</button>
-      <button class="btn-prim" id="csBtn" onclick="saveCustomService()">Add Service →</button>
+    <div class="how-step">
+      <div class="how-num">2</div>
+      <h3>We build your schedule</h3>
+      <p>MotoTrack auto-generates a fuel-aware service schedule from 50+ built-in service types.</p>
+    </div>
+    <div class="how-step">
+      <div class="how-num">3</div>
+      <h3>Get alerted, stay ahead</h3>
+      <p>Warning, urgent and overdue emails land in your inbox exactly when you need them — never before, never late.</p>
     </div>
   </div>
 </div>
 
-<!-- SUCCESS TOAST -->
-<div class="toast hidden" id="toast"></div>
-
-<script src="js/api.js"></script>
-<script src="js/app.js"></script>
-
-<!-- SET INTERVALS MODAL -->
-<div class="overlay" id="MODAL_INTERVAL">
-  <div class="modal" style="width:600px;max-height:90vh;display:flex;flex-direction:column">
-    <div class="mh" style="flex-shrink:0">
-      <div>
-        <h2>⏱ Set Service Intervals</h2>
-        <p style="font-size:12px;color:var(--text3);margin-top:3px">Set km or hours, months, or both — alert fires when either is reached first</p>
+<div class="land-section" id="testimonials">
+  <div class="section-head">
+    <span class="section-eyebrow">Testimonials</span>
+    <h2>Loved by people who hate forgetting things</h2>
+    <p>A few words from early MotoTrack riders and drivers.</p>
+  </div>
+  <div class="testi-grid">
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-quote">"I used to find out my oil was overdue by the smell. Now I get an email a week before. Genuinely stress-free."</p>
+      <div class="testi-person">
+        <div class="testi-av" style="background:var(--accent-grad)">RS</div>
+        <div><div class="testi-name">Rahul S.</div><div class="testi-role">Car owner, Chennai</div></div>
       </div>
-      <button class="mclose" onclick="closeModal('MODAL_INTERVAL')">✕</button>
     </div>
-    <!-- tip -->
-    <div style="flex-shrink:0;padding:0.7rem 1.4rem;background:#EFF6FF;border-bottom:1px solid var(--border);font-size:12px;color:#2563EB;line-height:1.6">
-      💡 Example — Engine Oil: <strong>10,000 km</strong> or <strong>12 months</strong> · Tractor hydraulic oil: <strong>500 hrs</strong> or <strong>12 months</strong>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-quote">"Runs my bike, my brother's scooter and my dad's tractor from one login. The PDF service log saved us during resale."</p>
+      <div class="testi-person">
+        <div class="testi-av" style="background:linear-gradient(135deg,#2563EB,#0891B2)">PK</div>
+        <div><div class="testi-name">Priya K.</div><div class="testi-role">Bike &amp; scooter owner, Madurai</div></div>
+      </div>
     </div>
-    <!-- header -->
-    <div style="flex-shrink:0;display:grid;grid-template-columns:1fr 230px;padding:0.5rem 1.4rem;background:var(--bg3);border-bottom:1.5px solid var(--border);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--text4)">
-      <div>Service</div>
-      <div style="text-align:center">Distance &nbsp;/&nbsp; Time</div>
-    </div>
-    <!-- scrollable rows -->
-    <div id="intervalBody" style="flex:1;overflow-y:auto;min-height:0"></div>
-    <div class="mf" style="flex-shrink:0">
-      <button class="btn-sec" onclick="closeModal('MODAL_INTERVAL')">Cancel</button>
-      <button class="btn-prim" onclick="saveIntervals()">Save Intervals →</button>
+    <div class="testi-card">
+      <div class="testi-stars">★★★★★</div>
+      <p class="testi-quote">"Custom intervals are what sold me — our tractor's grease points don't follow anyone else's manual, and MotoTrack didn't mind."</p>
+      <div class="testi-person">
+        <div class="testi-av" style="background:linear-gradient(135deg,#16A34A,#4ADE80)">MV</div>
+        <div><div class="testi-name">Muthu V.</div><div class="testi-role">Farm equipment owner</div></div>
+      </div>
     </div>
   </div>
 </div>
+
+<div class="land-section alt" id="faq">
+  <div class="section-head">
+    <span class="section-eyebrow">FAQ</span>
+    <h2>Good to know</h2>
+    <p>Still curious? Here's what people usually ask before signing up.</p>
+  </div>
+  <div class="faq-list">
+    <details class="faq-item" open>
+      <summary>Is MotoTrack really free?</summary>
+      <p>Yes — creating an account, adding vehicles, tracking services and getting email alerts are all free, with no card required.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Which vehicles are supported?</summary>
+      <p>Cars, bikes/motorcycles and tractors, across petrol, diesel, CNG, electric and hybrid fuel types — each with its own fuel-aware service catalogue.</p>
+    </details>
+    <details class="faq-item">
+      <summary>How do reminders reach me?</summary>
+      <p>By email — a warning before a service is due, an urgent reminder as it closes in, and a critical alert if it becomes overdue.</p>
+    </details>
+    <details class="faq-item">
+      <summary>Can I change a service interval?</summary>
+      <p>Yes. Every built-in interval can be overridden per vehicle, and you can add entirely custom services unique to your ride.</p>
+    </details>
+    <details class="faq-item">
+      <summary>What if my odometer reading is out of date?</summary>
+      <p>MotoTrack calculates due dates from your last saved reading — so do keep it updated. We'll gently remind you to, too.</p>
+    </details>
+  </div>
+</div>
+
+<div class="land-cta-wrap">
+  <div class="land-cta">
+    <h2>Set up takes 2 minutes. Savings last years.</h2>
+    <p>Join MotoTrack and let your inbox do the remembering.</p>
+    <a class="btn-cta" href="register.html">Create free account →</a>
+  </div>
+</div>
+
+<footer class="land-footer">
+  <div class="footer-grid">
+    <div class="footer-col">
+      <div class="footer-brand"><div class="logo-icon">⚙</div>MotoTrack</div>
+      <p>Smart, fuel-aware vehicle service tracking for cars, bikes and tractors — with email alerts so nothing sneaks past due.</p>
+      <div class="footer-social">
+        <a href="#top" aria-label="Back to top">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        </a>
+        <a href="login.html" aria-label="Contact">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M4 4h16v16H4z" opacity="0"/><path d="M3 6l9 7 9-7M3 6v12h18V6"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <ul>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#how-it-works">How it Works</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Account</h4>
+      <ul>
+        <li><a href="login.html">Sign in</a></li>
+        <li><a href="register.html">Create account</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <ul>
+        <li><a href="login.html">Contact us</a></li>
+        <li><a href="#testimonials">Testimonials</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© MotoTrack — Vehicle Service Manager</span>
+    <span>Made for people who'd rather forget to worry, not to service.</span>
+  </div>
+</footer>
 
 </body>
 </html>

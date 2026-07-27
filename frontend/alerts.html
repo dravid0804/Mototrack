@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alert Settings — MotoTrack</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/common.css">
+</head>
+<body data-page="alerts">
+
+<div class="app-shell active">
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="logo-sq">⚙</div>
+      <div><div class="brand">MotoTrack</div><div class="tagline">Service Manager</div></div>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-sep">Overview</div>
+      <a class="nav-item" data-view="dashboard" href="dashboard.html"><span class="ni">◈</span>Dashboard</a>
+      <a class="nav-item" data-view="notifications" href="notifications.html"><span class="ni">🔔</span>Notifications<span class="nav-badge hidden" id="NB"></span></a>
+      <div class="nav-sep">Vehicles</div>
+      <a class="nav-item" data-view="vehicles" href="vehicles.html"><span class="ni">🚗</span>My Vehicles</a>
+      <a class="nav-item" data-view="addVehicle" href="add-vehicle.html"><span class="ni">＋</span>Add Vehicle</a>
+      <div class="nav-sep">Maintenance</div>
+      <a class="nav-item" data-view="servicelog" href="service-log.html"><span class="ni">📋</span>Service Log</a>
+      <a class="nav-item" data-view="upcoming" href="upcoming.html"><span class="ni">📅</span>Upcoming</a>
+      <div class="nav-sep">Settings</div>
+      <a class="nav-item" data-view="alerts" href="alerts.html"><span class="ni">📨</span>Alert Settings</a>
+      <a class="nav-item" data-view="contactus" href="contact.html"><span class="ni">✉️</span>Contact Us</a>
+      <a class="nav-item" data-view="profile" href="profile.html"><span class="ni">👤</span>Profile</a>
+      <center><div><button class="u-logout" onclick="logout()" title="Logout">⏻LogOut</button></div></center>
+    </nav>
+    <div class="sb-user">
+      <div class="u-av" id="SB_AV">?</div>
+      <div><div class="u-name" id="SB_NAME">Loading...</div><div class="u-email" id="SB_EMAIL"></div></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-title" id="TB_TITLE">Alert Settings</div>
+      <div class="search"><span>🔍</span><input id="searchInput" placeholder="Search vehicles, services..." oninput="handleSearch(this.value)"></div>
+      <div class="tb-btn" id="TOP_BELL" onclick="window.location.href='notifications.html'">🔔<span class="nb hidden" id="TOP_NB"></span></div>
+      <div class="tb-btn" onclick="window.location.href='profile.html'">👤</div>
+    </div>
+
+    <div class="content">
+      <div class="page-h"><div class="breadcrumb">Home › <span>Alert Settings</span></div><h1>Alert Settings</h1><p>Configure how and when MotoTrack notifies you</p></div>
+
+      <div class="notif-settings">
+        <div class="ns-title">✉ Email Alerts <span class="ns-badge">Active</span></div>
+        <div class="toggle-row"><div class="tr-info"><div class="tl">Advance warning</div><div class="ts">Email before any service reaches the selected km or hour limit</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle on em alert-toggle" id="alert_warning" onclick="toggleAlert(this)"></div></div>
+        <div class="toggle-row"><div class="tr-info"><div class="tl">Urgent reminder</div><div class="ts">Extra email when a service is within the final 50 km, 50 hrs, or 10 days</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle on em alert-toggle" id="alert_urgent" onclick="toggleAlert(this)"></div></div>
+        <div class="toggle-row"><div class="tr-info"><div class="tl">Overdue critical alert</div><div class="ts">Email when any service passes its due date or due reading</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle on em alert-toggle" id="alert_overdue" onclick="toggleAlert(this)"></div></div>
+        <div class="toggle-row"><div class="tr-info"><div class="tl">Service completion receipt</div><div class="ts">Email confirmation every time you log a completed service</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle on em alert-toggle" id="alert_completion" onclick="toggleAlert(this)"></div></div>
+        <div class="toggle-row"><div class="tr-info"><div class="tl">Reading update reminder</div><div class="ts">Weekly email with a link to update vehicle readings</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle on em alert-toggle" id="alert_odometer" onclick="toggleAlert(this)"></div></div>
+        <div class="toggle-row"><div class="tr-info"><div class="tl">Monthly health digest</div><div class="ts">Full vehicle health report on the 1st of every month</div></div><div class="tr-channel"><span class="tr-ch-tag ch-em">✉ Email</span></div><div class="toggle alert-toggle" id="alert_digest" onclick="toggleAlert(this)"></div></div>
+      </div>
+
+      <div class="notif-settings">
+        <div class="ns-title">⏰ Reminder Interval</div>
+        <div class="reminder-grid">
+          <div class="field"><label>Send before distance</label>
+            <select id="warnKmPreset" onchange="handleWarnKmPreset()">
+              <option value="100">100 km / hrs</option><option value="250">250 km / hrs</option><option value="500">500 km / hrs</option><option value="custom">Manual</option>
+            </select>
+          </div>
+          <div class="field"><label>Manual km / hrs</label>
+            <input type="number" id="warnKmCustom" min="50" step="50" placeholder="100" oninput="handleWarnKmManual()">
+          </div>
+          <div class="field"><label>Send before time</label>
+            <select id="warnDays">
+              <option value="3">3 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-actions">
+          <button class="btn-prim" onclick="saveAlertSettings()">Save Settings</button>
+        </div>
+      </div>
+
+      <div class="notif-settings">
+        <div class="ns-title">👁 Email Preview</div>
+        <div class="email-preview">
+          <div class="em-subject">🔴 Engine Oil overdue — Honda City</div>
+          <div class="em-from">From: MotoTrack &lt;dravidbabu11@gmail.com&gt; · To: you@example.com</div>
+          <div class="em-body">Hi Arjun,<br><br>Your <strong>Honda City</strong> engine oil change is now <span style="color:var(--red)"><strong>500 km overdue</strong></span>.<br><br>Last changed: 9,500 km · Due at: 10,000 km · Current: 10,500 km<br>Oil to use: 5W-30 Synthetic, 3.5L<br><br>Continued driving with degraded oil increases engine wear significantly.<div class="em-cta">View Service Details →</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<a class="contact-fab" href="contact.html" aria-label="Something to tell us?">
+  <span class="contact-fab-tooltip">Something to tell us?</span>
+  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M36 10h20c2.2 0 4 1.8 4 4v14c0 2.2-1.8 4-4 4H46l-6 6v-6h-4c-2.2 0-4-1.8-4-4V14c0-2.2 1.8-4 4-4z" fill="currentColor"/>
+    <path d="M8 18h30c2.76 0 5 2.24 5 5v18c0 2.76-2.24 5-5 5H21l-9 8v-8h-4c-2.76 0-5-2.24-5-5V23c0-2.76 2.24-5 5-5z" fill="#fff" stroke="currentColor" stroke-width="3"/>
+  </svg>
+</a>
+
+<div class="toast hidden" id="toast"></div>
+
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
+<script src="js/alerts.js"></script>
+</body>
+</html>

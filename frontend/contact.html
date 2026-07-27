@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact Us — MotoTrack</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/common.css">
+</head>
+<body data-page="contactus">
+
+<div class="app-shell active">
+  <div class="sidebar">
+    <div class="sb-logo">
+      <div class="logo-sq">⚙</div>
+      <div><div class="brand">MotoTrack</div><div class="tagline">Service Manager</div></div>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-sep">Overview</div>
+      <a class="nav-item" data-view="dashboard" href="dashboard.html"><span class="ni">◈</span>Dashboard</a>
+      <a class="nav-item" data-view="notifications" href="notifications.html"><span class="ni">🔔</span>Notifications<span class="nav-badge hidden" id="NB"></span></a>
+      <div class="nav-sep">Vehicles</div>
+      <a class="nav-item" data-view="vehicles" href="vehicles.html"><span class="ni">🚗</span>My Vehicles</a>
+      <a class="nav-item" data-view="addVehicle" href="add-vehicle.html"><span class="ni">＋</span>Add Vehicle</a>
+      <div class="nav-sep">Maintenance</div>
+      <a class="nav-item" data-view="servicelog" href="service-log.html"><span class="ni">📋</span>Service Log</a>
+      <a class="nav-item" data-view="upcoming" href="upcoming.html"><span class="ni">📅</span>Upcoming</a>
+      <div class="nav-sep">Settings</div>
+      <a class="nav-item" data-view="alerts" href="alerts.html"><span class="ni">📨</span>Alert Settings</a>
+      <a class="nav-item" data-view="contactus" href="contact.html"><span class="ni">✉️</span>Contact Us</a>
+      <a class="nav-item" data-view="profile" href="profile.html"><span class="ni">👤</span>Profile</a>
+      <center><div><button class="u-logout" onclick="logout()" title="Logout">⏻LogOut</button></div></center>
+    </nav>
+    <div class="sb-user">
+      <div class="u-av" id="SB_AV">?</div>
+      <div><div class="u-name" id="SB_NAME">Loading...</div><div class="u-email" id="SB_EMAIL"></div></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-title" id="TB_TITLE">Contact Us</div>
+      <div class="search"><span>🔍</span><input id="searchInput" placeholder="Search vehicles, services..." oninput="handleSearch(this.value)"></div>
+      <div class="tb-btn" id="TOP_BELL" onclick="window.location.href='notifications.html'">🔔<span class="nb hidden" id="TOP_NB"></span></div>
+      <div class="tb-btn" onclick="window.location.href='profile.html'">👤</div>
+    </div>
+
+    <div class="content">
+      <div class="page-h"><div class="breadcrumb">Home › <span>Contact Us</span></div><h1>Contact Us</h1><p>Found a bug, or have an idea to improve MotoTrack? Send it straight to us.</p></div>
+      <div class="settings-card" style="max-width:640px">
+        <div class="settings-section">
+          <h3>Send a message</h3>
+          <div class="field"><label>Your Email</label><input type="email" id="cu_email" disabled></div>
+          <div class="field"><label>Subject</label><input type="text" id="cu_subject" placeholder="e.g. Feature request, bug report..."></div>
+          <div class="field"><label>Message</label>
+            <textarea id="cu_message" rows="6" placeholder="Tell us what's on your mind..." style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:var(--r2);padding:0.75rem 1rem;color:var(--text);font-family:var(--font-body);font-size:0.88rem;outline:none;resize:vertical"></textarea>
+          </div>
+          <div class="form-error hidden" id="cuError"></div>
+          <button class="btn-prim" id="cuBtn" style="font-size:0.83rem;padding:8px 20px;margin-top:0.5rem" onclick="sendContactMessage()">Send Message →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast"></div>
+
+<script src="js/api.js"></script>
+<script src="js/common.js"></script>
+<script src="js/contact.js"></script>
+</body>
+</html>
